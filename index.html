@@ -1,28 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Pima Poa League</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0b0f14;
-      color: #eaeaea;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    h1 {
-      font-size: 2rem;
-      letter-spacing: 2px;
-      opacity: 0.85;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Pima Poa League Table</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0c0f14;
+  --card:#141922;
+  --green:#18c964;
+  --red:#ff4d4d;
+  --text:#e6e8eb;
+  --muted:#9aa0a6;
+}
+
+body{
+  margin:0;
+  background:linear-gradient(180deg,#0b0e13,#111827);
+  font-family:Inter,system-ui;
+  color:var(--text);
+}
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:24px;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:18px;
+  font-weight:800;
+  letter-spacing:1px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--card);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+thead{
+  background:#1b2130;
+}
+
+th,td{
+  padding:10px 8px;
+  text-align:center;
+  font-size:14px;
+}
+
+th{
+  font-weight:600;
+  color:var(--muted);
+}
+
+td.player{
+  text-align:left;
+  font-weight:600;
+}
+
+tr:nth-child(even){
+  background:#111624;
+}
+
+.pos{
+  font-weight:800;
+  border-radius:6px;
+  padding:4px 0;
+}
+
+.top5{
+  background:rgba(24,201,100,0.15);
+  color:var(--green);
+}
+
+.bottom2{
+  background:rgba(255,77,77,0.15);
+  color:var(--red);
+}
+
+.footer{
+  text-align:center;
+  margin-top:14px;
+  color:var(--muted);
+  font-size:13px;
+}
+</style>
 </head>
+
 <body>
-  <h1>🎱 Pima Poa League — Site Live</h1>
+<div class="container">
+  <h1>🎱 Pima Poa League Table</h1>
+
+  <table id="league">
+    <thead>
+      <tr>
+        <th>POS</th><th>PLAYER</th><th>P</th><th>W</th><th>L</th>
+        <th>BF</th><th>BA</th><th>BD</th><th>7B</th><th>BP</th><th>PTS</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="footer">Auto-updated from league.csv</div>
+</div>
+
+<script>
+fetch("data/league.csv")
+.then(r=>r.text())
+.then(text=>{
+  const rows=text.trim().split("\n").slice(1);
+  const tbody=document.querySelector("#league tbody");
+
+  rows.forEach((row,i)=>{
+    const c=row.split(",");
+    const tr=document.createElement("tr");
+
+    const posClass = i < 5 ? "top5" : i >= rows.length-2 ? "bottom2" : "";
+
+    tr.innerHTML=`
+      <td class="pos ${posClass}">${c[0]}</td>
+      <td class="player">${c[1]}</td>
+      <td>${c[2]}</td>
+      <td>${c[3]}</td>
+      <td>${c[4]}</td>
+      <td>${c[5]}</td>
+      <td>${c[6]}</td>
+      <td>${c[7]}</td>
+      <td>${c[8]}</td>
+      <td>${c[9]}</td>
+      <td><strong>${c[10]}</strong></td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+</script>
+
 </body>
 </html>
