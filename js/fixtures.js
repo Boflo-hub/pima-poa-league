@@ -5,7 +5,7 @@ fetch("data/fixtures.csv")
     const header = lines[0].split(",").map(x => x.trim());
     const rows = lines.slice(1);
 
-    const tbody = document.querySelector("#fixturesTable tbody");
+    const tbody = document.getElementById("fixturesBody");
     const roundSelect = document.getElementById("roundFilter");
     const badge = document.getElementById("currentRoundBadge");
 
