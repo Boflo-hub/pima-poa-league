@@ -2,49 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pima Poa League – Fixtures</title>
+
   <!-- Sporty font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Your site CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  
+
 <header class="top">
   <div class="brand">
     <div class="logo">8</div>
     <div>
-      <h1>Fixtures & Results</h1>
+      <h1>Fixtures &amp; Results</h1>
       <p class="sub">Pima Poa Pool League</p>
     </div>
   </div>
 
   <div class="controls">
     <div id="currentRoundBadge" class="badge">Current Round: —</div>
-    <select id="roundFilter">
+    <select id="roundFilter" aria-label="Round filter">
       <option value="all">All Rounds</option>
     </select>
   </div>
 </header>
-  
-<main class="wrap">
- <table id="fixturesTable">
-  <thead>
-    <tr>
-      <th>Round</th>
-      <th>Player A</th>
-      <th>Score</th>
-      <th>Player B</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody id="fixturesBody"></tbody>
-</table>
 
-  <p class="footer">Auto-updated from fixtures.csv</p>
+<main class="wrap">
+  <!-- Error banner appears here if something breaks -->
+  <div id="errorBox" style="display:none; padding:12px 14px; margin:12px 0; border-radius:10px; background:rgba(255,60,60,0.12); border:1px solid rgba(255,60,60,0.35); color:#ffd2d2; font-family:Rajdhani,system-ui,sans-serif;">
+    <strong style="display:block; font-size:18px; margin-bottom:6px;">Couldn’t load fixtures</strong>
+    <div id="errorMsg" style="font-size:14px; opacity:0.95;"></div>
+  </div>
+
+  <table id="fixturesTable">
+    <thead>
+      <tr>
+        <th>Round</th>
+        <th>Player A</th>
+        <th>Score</th>
+        <th>Player B</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <!-- IMPORTANT: must have this ID -->
+    <tbody id="fixturesBody"></tbody>
+  </table>
+
+  <p class="footer">Auto-updated from <code>data/fixtures.csv</code></p>
 </main>
-  
+
 <script src="js/fixtures.js"></script>
 </body>
 </html>
