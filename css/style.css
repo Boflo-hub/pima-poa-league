@@ -1,0 +1,26 @@
+table {
+  width: 90%;
+  margin: auto;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+}
+
+.pending {
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+.played {
+  color: #00ff99;
+  font-weight: bold;
+}
+
+select {
+  margin: 20px auto;
+  display: block;
+  padding: 8px;
+}
