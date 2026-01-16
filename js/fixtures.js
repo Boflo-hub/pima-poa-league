@@ -1,7 +1,7 @@
-// js/fixtures.js
+// js/fixtures.js  (for CSV headers: Round, Player A, Player B, Played?, Winner)
 
 (function () {
-  const CSV_PATH = "data/fixtures.csv"; // must exist in /data/fixtures.csv
+  const CSV_PATH = "data/fixtures.csv";
 
   const tbody = document.getElementById("fixturesBody");
   const roundSelect = document.getElementById("roundFilter");
@@ -15,7 +15,7 @@
     if (errorBox) errorBox.style.display = "block";
   }
 
-  // A safer CSV row parser (handles quoted fields + commas inside quotes)
+  // Handles commas inside quotes too (safer than split(","))
   function parseCSVLine(line) {
     const out = [];
     let cur = "";
@@ -24,33 +24,27 @@
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
 
-      if (ch === '"' && line[i + 1] === '"') {
-        // escaped quote
-        cur += '"';
-        i++;
-        continue;
-      }
-
-      if (ch === '"') {
-        inQuotes = !inQuotes;
-        continue;
-      }
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
 
       if (ch === "," && !inQuotes) {
         out.push(cur.trim());
         cur = "";
         continue;
       }
-
       cur += ch;
     }
-
     out.push(cur.trim());
     return out;
   }
 
   function normalizeHeader(h) {
-    return (h || "").trim().replace(/\s+/g, "");
+    // normalize: remove spaces, lowercase, remove punctuation like ?
+    return (h || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/[?]/g, "");
   }
 
   function statusPill(played) {
@@ -60,7 +54,6 @@
   }
 
   function clearOptionsKeepAllRounds() {
-    // Keep the first option (All Rounds) and remove the rest
     while (roundSelect.options.length > 1) roundSelect.remove(1);
   }
 
@@ -70,32 +63,31 @@
       return res.text();
     })
     .then((csvText) => {
-      const clean = csvText.replace(/\r/g, "").trim(); // handle CRLF
+      const clean = csvText.replace(/\r/g, "").trim();
       if (!clean) throw new Error("fixtures.csv is empty.");
 
       const lines = clean.split("\n").filter(Boolean);
       if (lines.length < 2) throw new Error("fixtures.csv has no data rows.");
 
-      const header = parseCSVLine(lines[0]).map(normalizeHeader);
-      const rows = lines.slice(1);
+      const headerRaw = parseCSVLine(lines[0]);
+      const header = headerRaw.map(normalizeHeader);
 
-      // Accept a few header variants (just in case)
-      const colIndex = (nameOptions) => {
-        for (const n of nameOptions) {
+      // helper: find column by multiple possible names
+      const colIndex = (names) => {
+        for (const n of names) {
           const idx = header.indexOf(normalizeHeader(n));
           if (idx !== -1) return idx;
         }
         return -1;
       };
 
-      // Required columns:
-      // Round, PlayerA, PlayerB, ScoreA, ScoreB
+      // Your CSV columns
       const idx = {
         round: colIndex(["Round"]),
         a: colIndex(["PlayerA", "Player A"]),
         b: colIndex(["PlayerB", "Player B"]),
-        sa: colIndex(["ScoreA", "Score A"]),
-        sb: colIndex(["ScoreB", "Score B"])
+        played: colIndex(["Played", "Played?"]),
+        winner: colIndex(["Winner"])
       };
 
       const missing = Object.entries(idx)
@@ -104,51 +96,47 @@
 
       if (missing.length) {
         throw new Error(
-          `Missing required column(s): ${missing.join(", ")}. ` +
-          `Expected headers like: Round, PlayerA, PlayerB, ScoreA, ScoreB`
+          `Missing column(s): ${missing.join(", ")}.\n` +
+          `Your header must include: Round, Player A, Player B, Played?, Winner`
         );
       }
 
       const fixtures = [];
       const roundsSet = new Set();
 
-      for (const line of rows) {
+      for (const line of lines.slice(1)) {
         const cols = parseCSVLine(line);
 
         const round = (cols[idx.round] || "").trim();
         const a = (cols[idx.a] || "").trim();
         const b = (cols[idx.b] || "").trim();
-        const sa = (cols[idx.sa] || "").trim();
-        const sb = (cols[idx.sb] || "").trim();
+        const playedVal = (cols[idx.played] || "").trim().toUpperCase();
+        const winner = (cols[idx.winner] || "").trim();
 
         if (!round || !a || !b) continue;
 
-        const played = sa !== "" && sb !== "";
+        const played = playedVal === "YES" || playedVal === "Y" || playedVal === "TRUE" || playedVal === "1";
         roundsSet.add(round);
-        fixtures.push({ round, a, b, sa, sb, played });
+
+        fixtures.push({ round, a, b, played, winner });
       }
 
-      if (!fixtures.length) throw new Error("No valid fixtures rows found in fixtures.csv.");
+      if (!fixtures.length) throw new Error("No valid fixtures rows found.");
 
-      // Sort rounds numerically (1,2,3...)
       const rounds = Array.from(roundsSet)
         .map((r) => String(r).trim())
         .filter(Boolean)
         .sort((x, y) => Number(x) - Number(y));
 
-      // Determine current round = first round with ANY pending match
+      // Current round = first round with ANY pending match
       let currentRound = rounds[0] || "1";
       for (const r of rounds) {
         const hasPending = fixtures.some((f) => f.round === r && !f.played);
-        if (hasPending) {
-          currentRound = r;
-          break;
-        }
+        if (hasPending) { currentRound = r; break; }
       }
-
       badge.textContent = `Current Round: ${currentRound}`;
 
-      // Build dropdown
+      // Dropdown
       clearOptionsKeepAllRounds();
       rounds.forEach((r) => {
         const opt = document.createElement("option");
@@ -164,7 +152,11 @@
           .filter((f) => filter === "all" || f.round === filter)
           .forEach((f) => {
             const tr = document.createElement("tr");
-            const scoreText = f.played ? `${f.sa} - ${f.sb}` : "vs";
+
+            // Score column: show winner if played, otherwise "vs"
+            const scoreText = f.played
+              ? (f.winner ? `WIN: ${f.winner}` : "Played")
+              : "vs";
 
             tr.innerHTML = `
               <td>Round ${f.round}</td>
@@ -173,24 +165,22 @@
               <td><strong>${f.b}</strong></td>
               <td>${statusPill(f.played)}</td>
             `;
+
             tbody.appendChild(tr);
           });
       }
 
-      // Default: show current round (unless user chooses All)
+      // Default = current round
       roundSelect.value = currentRound;
       render(currentRound);
 
-      roundSelect.addEventListener("change", (e) => {
-        render(e.target.value);
-      });
+      roundSelect.addEventListener("change", (e) => render(e.target.value));
     })
     .catch((err) => {
       showError(
         `${err.message}\n\nQuick checks:\n` +
         `1) Confirm this opens: /data/fixtures.csv\n` +
-        `2) Confirm headers: Round, PlayerA, PlayerB, ScoreA, ScoreB\n` +
-        `3) Confirm this page loads from GitHub Pages (not file://)`
+        `2) Confirm header matches: Round, Player A, Player B, Played?, Winner\n`
       );
     });
 })();
