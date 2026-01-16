@@ -90,4 +90,4 @@ fetch("data/fixtures.csv")
     render(currentRound);
 
     roundSelect.addEventListener("change", e => render(e.target.value));
-  });
+  }).catch(err => console.error("Fixtures load failed:", err));;
