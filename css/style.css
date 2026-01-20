@@ -180,3 +180,9 @@ td:nth-child(5){width:120px;}
   color:var(--amber);
   box-shadow:0 0 22px rgba(255,204,0,.12);
 }
+.toggle.active.current{
+  border-color:rgba(58,160,255,.35);
+  background:rgba(58,160,255,.10);
+  color:var(--blue);
+  box-shadow:0 0 22px rgba(58,160,255,.12);
+}
