@@ -25,11 +25,16 @@
   </div>
 
   <div class="controls">
-    <div id="currentRoundBadge" class="badge">Current Round: —</div>
-    <select id="roundFilter" aria-label="Round filter">
-      <option value="all">All Rounds</option>
-    </select>
-  </div>
+  <div id="currentRoundBadge" class="badge">Current Round: —</div>
+
+  <select id="roundFilter" aria-label="Round filter">
+    <option value="all">All Rounds</option>
+  </select>
+
+  <button id="pendingToggle" class="toggle" type="button" aria-pressed="false">
+    Show Pending Only
+  </button>
+</div>
 </header>
 
 <main class="wrap">
