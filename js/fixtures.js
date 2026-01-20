@@ -1,11 +1,15 @@
 (function () {
   const CSV_PATH = "data/fixtures.csv";
 
-  const tbody = document.getElementById("fixturesBody");
   const roundSelect = document.getElementById("roundFilter");
   const badge = document.getElementById("currentRoundBadge");
+  const summaryBadge = document.getElementById("roundSummaryBadge");
   const pendingBtn = document.getElementById("pendingToggle");
   const currentBtn = document.getElementById("currentRoundToggle");
+
+  const pendingBody = document.getElementById("pendingBody");
+  const playedBody = document.getElementById("playedBody");
+
   const errorBox = document.getElementById("errorBox");
   const errorMsg = document.getElementById("errorMsg");
 
@@ -129,7 +133,6 @@
         const hasPending = fixtures.some((f) => f.round === r && !f.played);
         if (hasPending) { currentRound = r; break; }
       }
-
       badge.textContent = `Current Round: ${currentRound}`;
 
       // Dropdown
@@ -145,7 +148,7 @@
       let pendingOnly = false;
       let currentOnly = true; // default ON
 
-      // Init buttons UI
+      // Buttons initial UI
       pendingBtn.classList.toggle("active", pendingOnly);
 
       currentBtn.classList.toggle("active", currentOnly);
@@ -156,37 +159,63 @@
       roundSelect.value = currentRound;
       roundSelect.disabled = currentOnly;
 
+      function computeRoundStats(list, round) {
+        const filtered = list.filter(f => round === "all" || f.round === round);
+        const total = filtered.length;
+        const played = filtered.filter(f => f.played).length;
+        return { total, played };
+      }
+
       function render() {
         const chosenRound = roundSelect.value || "all";
         const roundToUse = currentOnly ? currentRound : chosenRound;
 
-        tbody.innerHTML = "";
+        // Summary badge
+        const stats = computeRoundStats(fixtures, roundToUse);
+        summaryBadge.textContent = `Played: ${stats.played} / ${stats.total}`;
 
-        fixtures
+        pendingBody.innerHTML = "";
+        playedBody.innerHTML = "";
+
+        const filtered = fixtures
           .filter((f) => roundToUse === "all" || f.round === roundToUse)
-          .filter((f) => !pendingOnly || !f.played)
-          .forEach((f) => {
-            const tr = document.createElement("tr");
+          .filter((f) => !pendingOnly || !f.played);
 
-            const scoreText = f.played
-              ? (f.winner ? `WIN: ${f.winner}` : "Played")
-              : "vs";
+        const pending = filtered.filter(f => !f.played);
+        const played = filtered.filter(f => f.played);
 
-            tr.innerHTML = `
-              <td>Round ${f.round}</td>
-              <td><strong>${f.a}</strong></td>
-              <td>${scoreText}</td>
-              <td><strong>${f.b}</strong></td>
-              <td>${statusPill(f.played)}</td>
-            `;
+        // Pending first
+        pending.forEach(f => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>Round ${f.round}</td>
+            <td><strong>${f.a}</strong></td>
+            <td>vs</td>
+            <td><strong>${f.b}</strong></td>
+            <td>${statusPill(false)}</td>
+          `;
+          pendingBody.appendChild(tr);
+        });
 
-            tbody.appendChild(tr);
-          });
+        // Played below
+        played.forEach(f => {
+          const tr = document.createElement("tr");
+          const result = f.winner ? `WIN: ${f.winner}` : "Played";
+          tr.innerHTML = `
+            <td>Round ${f.round}</td>
+            <td><strong>${f.a}</strong></td>
+            <td>${result}</td>
+            <td><strong>${f.b}</strong></td>
+            <td>${statusPill(true)}</td>
+          `;
+          playedBody.appendChild(tr);
+        });
+
+        // If pendingOnly is ON, the played table will be empty — that’s intended.
       }
 
       render();
 
-      // Handlers
       roundSelect.addEventListener("change", render);
 
       pendingBtn.addEventListener("click", () => {
@@ -205,7 +234,6 @@
         currentBtn.setAttribute("aria-pressed", currentOnly ? "true" : "false");
         currentBtn.textContent = currentOnly ? "Current Round Only" : "All Rounds Mode";
 
-        // If current-only is ON, lock dropdown to current round
         if (currentOnly) {
           roundSelect.value = currentRound;
           roundSelect.disabled = true;
@@ -216,7 +244,5 @@
         render();
       });
     })
-    .catch((err) => {
-      showError(err.message);
-    });
+    .catch((err) => showError(err.message));
 })();
