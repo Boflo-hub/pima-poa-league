@@ -1,22 +1,42 @@
-(function () {
+(() => {
   const CSV_PATH = "data/fixtures.csv";
 
-  const roundSelect = document.getElementById("roundFilter");
-  const badge = document.getElementById("currentRoundBadge");
-  const summaryBadge = document.getElementById("roundSummaryBadge");
-  const pendingBtn = document.getElementById("pendingToggle");
-  const currentBtn = document.getElementById("currentRoundToggle");
+  const $ = (id) => document.getElementById(id);
 
-  const pendingBody = document.getElementById("pendingBody");
-  const playedBody = document.getElementById("playedBody");
+  const roundSelect = $("roundFilter");
+  const badge = $("currentRoundBadge");
+  const summaryBadge = $("roundSummaryBadge");
+  const pendingBtn = $("pendingToggle");
+  const currentBtn = $("currentRoundToggle");
 
-  const errorBox = document.getElementById("errorBox");
-  const errorMsg = document.getElementById("errorMsg");
+  const pendingBody = $("pendingBody");
+  const playedBody = $("playedBody");
+
+  const errorBox = $("errorBox");
+  const errorMsg = $("errorMsg");
 
   function showError(message) {
     console.error(message);
     if (errorMsg) errorMsg.textContent = message;
     if (errorBox) errorBox.style.display = "block";
+  }
+
+  // Guard: required elements
+  const required = [
+    ["roundFilter", roundSelect],
+    ["currentRoundBadge", badge],
+    ["roundSummaryBadge", summaryBadge],
+    ["pendingToggle", pendingBtn],
+    ["currentRoundToggle", currentBtn],
+    ["pendingBody", pendingBody],
+    ["playedBody", playedBody],
+    ["errorBox", errorBox],
+    ["errorMsg", errorMsg]
+  ];
+  const missing = required.filter(([, el]) => !el).map(([id]) => id);
+  if (missing.length) {
+    showError("Missing element(s) in fixtures.html: " + missing.join(", "));
+    return;
   }
 
   function parseCSVLine(line) {
@@ -45,8 +65,7 @@
     return (h || "")
       .trim()
       .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/[?]/g, "");
+      .replace(/\s+/g, "");
   }
 
   function statusPill(played) {
@@ -55,13 +74,9 @@
       : `<span class="status pending"><span class="dot"></span>Pending</span>`;
   }
 
-  function clearOptionsKeepAllRounds() {
-    while (roundSelect.options.length > 1) roundSelect.remove(1);
-  }
-
   fetch(CSV_PATH, { cache: "no-store" })
     .then((res) => {
-      if (!res.ok) throw new Error(`CSV fetch failed (${res.status})`);
+      if (!res.ok) throw new Error(`CSV fetch failed (${res.status}). Check: ${CSV_PATH}`);
       return res.text();
     })
     .then((csvText) => {
@@ -84,19 +99,16 @@
 
       const idx = {
         round: colIndex(["Round"]),
-        a: colIndex(["PlayerA", "Player A"]),
+        a: colIndex(["PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "Player A"]),
         b: colIndex(["PlayerB", "Player B"]),
-        played: colIndex(["Played", "Played?"]),
+        played: colIndex(["Played?", "Played"]),
         winner: colIndex(["Winner"])
       };
 
-      const missing = Object.entries(idx)
-        .filter(([, v]) => v === -1)
-        .map(([k]) => k);
-
-      if (missing.length) {
+      const missingCols = Object.entries(idx).filter(([, v]) => v === -1).map(([k]) => k);
+      if (missingCols.length) {
         throw new Error(
-          `Missing column(s): ${missing.join(", ")}. Expected: Round, Player A, Player B, Played?, Winner`
+          `CSV is missing column(s): ${missingCols.join(", ")}. Expected: Round, Player A, Player B, Played?, Winner`
         );
       }
 
@@ -120,23 +132,21 @@
         fixtures.push({ round, a, b, played, winner });
       }
 
-      if (!fixtures.length) throw new Error("No valid fixtures rows found.");
+      if (!fixtures.length) throw new Error("No valid fixtures rows found in fixtures.csv.");
 
-      const rounds = Array.from(roundsSet)
-        .map((r) => String(r).trim())
-        .filter(Boolean)
-        .sort((x, y) => Number(x) - Number(y));
+      const rounds = Array.from(roundsSet).sort((x, y) => Number(x) - Number(y));
 
-      // Current round = first round with ANY pending match
+      // Current round = first round that still has any pending
       let currentRound = rounds[0] || "1";
       for (const r of rounds) {
         const hasPending = fixtures.some((f) => f.round === r && !f.played);
         if (hasPending) { currentRound = r; break; }
       }
-      badge.textContent = `Current Round: ${currentRound}`;
 
-      // Dropdown
-      clearOptionsKeepAllRounds();
+      badge.textContent = `Current Round:${currentRound}`;
+
+      // Populate dropdown
+      while (roundSelect.options.length > 1) roundSelect.remove(1);
       rounds.forEach((r) => {
         const opt = document.createElement("option");
         opt.value = r;
@@ -144,47 +154,37 @@
         roundSelect.appendChild(opt);
       });
 
-      // STATE
       let pendingOnly = false;
-      let currentOnly = true; // default ON
+      let currentOnly = true;
 
-      // Buttons initial UI
-      pendingBtn.classList.toggle("active", pendingOnly);
-
-      currentBtn.classList.toggle("active", currentOnly);
-      currentBtn.classList.toggle("current", currentOnly);
-      currentBtn.setAttribute("aria-pressed", currentOnly ? "true" : "false");
-
-      // Force current round filter initially
+      // default: current round
       roundSelect.value = currentRound;
       roundSelect.disabled = currentOnly;
 
-      function computeRoundStats(list, round) {
-        const filtered = list.filter(f => round === "all" || f.round === round);
-        const total = filtered.length;
-        const played = filtered.filter(f => f.played).length;
+      function roundStats(round) {
+        const list = fixtures.filter(f => round === "all" || f.round === round);
+        const total = list.length;
+        const played = list.filter(f => f.played).length;
         return { total, played };
       }
 
       function render() {
         const chosenRound = roundSelect.value || "all";
-        const roundToUse = currentOnly ? currentRound : chosenRound;
+        const activeRound = currentOnly ? currentRound : chosenRound;
 
-        // Summary badge
-        const stats = computeRoundStats(fixtures, roundToUse);
+        const stats = roundStats(activeRound);
         summaryBadge.textContent = `Played: ${stats.played} / ${stats.total}`;
 
         pendingBody.innerHTML = "";
         playedBody.innerHTML = "";
 
         const filtered = fixtures
-          .filter((f) => roundToUse === "all" || f.round === roundToUse)
-          .filter((f) => !pendingOnly || !f.played);
+          .filter(f => activeRound === "all" || f.round === activeRound)
+          .filter(f => !pendingOnly || !f.played);
 
         const pending = filtered.filter(f => !f.played);
         const played = filtered.filter(f => f.played);
 
-        // Pending first
         pending.forEach(f => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -197,7 +197,6 @@
           pendingBody.appendChild(tr);
         });
 
-        // Played below
         played.forEach(f => {
           const tr = document.createElement("tr");
           const result = f.winner ? `WIN: ${f.winner}` : "Played";
@@ -210,8 +209,6 @@
           `;
           playedBody.appendChild(tr);
         });
-
-        // If pendingOnly is ON, the played table will be empty — that’s intended.
       }
 
       render();
@@ -221,25 +218,17 @@
       pendingBtn.addEventListener("click", () => {
         pendingOnly = !pendingOnly;
         pendingBtn.classList.toggle("active", pendingOnly);
-        pendingBtn.setAttribute("aria-pressed", pendingOnly ? "true" : "false");
         pendingBtn.textContent = pendingOnly ? "Showing Pending Only" : "Show Pending Only";
         render();
       });
 
       currentBtn.addEventListener("click", () => {
         currentOnly = !currentOnly;
-
         currentBtn.classList.toggle("active", currentOnly);
-        currentBtn.classList.toggle("current", currentOnly);
-        currentBtn.setAttribute("aria-pressed", currentOnly ? "true" : "false");
         currentBtn.textContent = currentOnly ? "Current Round Only" : "All Rounds Mode";
 
-        if (currentOnly) {
-          roundSelect.value = currentRound;
-          roundSelect.disabled = true;
-        } else {
-          roundSelect.disabled = false;
-        }
+        roundSelect.disabled = currentOnly;
+        if (currentOnly) roundSelect.value = currentRound;
 
         render();
       });
