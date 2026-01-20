@@ -186,3 +186,80 @@ td:nth-child(5){width:120px;}
   color:var(--blue);
   box-shadow:0 0 22px rgba(58,160,255,.12);
 }
+.badge.small{
+  padding:8px 10px;
+  font-size:14px;
+  opacity:0.95;
+}
+
+.section{
+  margin:18px 0 26px;
+}
+
+.section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:10px 0 10px;
+}
+
+.section-head h2{
+  margin:0;
+  font-size:22px;
+  letter-spacing:.3px;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:800;
+  border:1px solid var(--line);
+}
+
+.pill.pending{
+  color:var(--amber);
+  background:rgba(255,204,0,.10);
+  border-color:rgba(255,204,0,.20);
+}
+
+.pill.played{
+  color:var(--green);
+  background:rgba(0,245,160,.10);
+  border-color:rgba(0,245,160,.18);
+}
+
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border-radius:18px;
+  background:linear-gradient(180deg, rgba(15,26,43,.85), rgba(12,21,36,.75));
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+
+.table thead th{
+  text-align:left;
+  padding:14px 16px;
+  font-size:14px;
+  letter-spacing:1.2px;
+  color:var(--muted);
+  text-transform:uppercase;
+  background:rgba(255,255,255,.03);
+  border-bottom:1px solid var(--line);
+}
+
+.table tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  font-size:16px;
+}
+
+.table tbody tr:hover{
+  background:rgba(255,255,255,.03);
+}
