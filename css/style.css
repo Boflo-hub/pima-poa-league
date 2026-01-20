@@ -154,10 +154,29 @@ td:nth-child(5){width:120px;}
   background:currentColor;
   box-shadow:0 0 18px currentColor;
 }
-
 .footer{
   margin:14px 0 0;
   color:var(--muted);
   text-align:center;
   font-size:14px;
+}
+.toggle{
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(15,26,43,.55);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+
+.toggle:hover{
+  background:rgba(255,255,255,.06);
+}
+
+.toggle.active{
+  border-color:rgba(255,204,0,.35);
+  background:rgba(255,204,0,.10);
+  color:var(--amber);
+  box-shadow:0 0 22px rgba(255,204,0,.12);
 }
