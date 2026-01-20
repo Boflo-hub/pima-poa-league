@@ -17,78 +17,75 @@
   <div class="brand">
     <div class="logo">8</div>
     <div>
-      <h1>Fixtures &amp; Results</h1>
+      <h1>Fixtures & Results</h1>
       <p class="sub">Pima Poa Pool League</p>
     </div>
   </div>
 
   <div class="controls">
     <div id="currentRoundBadge" class="badge">Current Round: —</div>
-    <div id="roundSummaryBadge" class="badge small">Played: — / —</div>
+    <div id="roundSummaryBadge" class="badge ghost">Played: — / —</div>
 
-    <select id="roundFilter" aria-label="Round filter">
+    <select id="roundFilter" class="select">
       <option value="all">All Rounds</option>
     </select>
 
-    <button id="pendingToggle" class="toggle" type="button" aria-pressed="false">
-      Show Pending Only
-    </button>
-
-    <button id="currentRoundToggle" class="toggle" type="button" aria-pressed="true">
-      Current Round Only
-    </button>
+    <button id="pendingToggle" class="btn">Show Pending Only</button>
+    <button id="currentRoundToggle" class="btn active">Current Round Only</button>
   </div>
 </header>
 
 <main class="wrap">
-  <div id="errorBox" style="display:none; padding:12px 14px; margin:12px 0; border-radius:10px; background:rgba(255,60,60,0.12); border:1px solid rgba(255,60,60,0.35); color:#ffd2d2; font-family:Rajdhani,system-ui,sans-serif;">
-    <strong style="display:block; font-size:18px; margin-bottom:6px;">Couldn’t load fixtures</strong>
-    <div id="errorMsg" style="font-size:14px; opacity:0.95;"></div>
+  <div id="errorBox" class="error" style="display:none;">
+    <div class="error-title">Couldn’t load fixtures</div>
+    <div id="errorMsg" class="error-msg"></div>
   </div>
 
-  <!-- PENDING SECTION -->
   <section class="section">
     <div class="section-head">
       <h2>Pending</h2>
-      <span class="pill pending"><span class="dot"></span>To play</span>
+      <span class="chip pending"><span class="dot"></span> To play</span>
     </div>
 
-    <table class="table" id="pendingTable">
-      <thead>
-        <tr>
-          <th>Round</th>
-          <th>Player A</th>
-          <th>vs</th>
-          <th>Player B</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="pendingBody"></tbody>
-    </table>
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Player A</th>
+            <th>VS</th>
+            <th>Player B</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </div>
   </section>
 
-  <!-- PLAYED SECTION -->
   <section class="section">
     <div class="section-head">
       <h2>Played</h2>
-      <span class="pill played"><span class="dot"></span>Done</span>
+      <span class="chip played"><span class="dot"></span> Done</span>
     </div>
 
-    <table class="table" id="playedTable">
-      <thead>
-        <tr>
-          <th>Round</th>
-          <th>Player A</th>
-          <th>Result</th>
-          <th>Player B</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="playedBody"></tbody>
-    </table>
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Player A</th>
+            <th>Result</th>
+            <th>Player B</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="playedBody"></tbody>
+      </table>
+    </div>
   </section>
 
-  <p class="footer">Auto-updated from <code>data/fixtures.csv</code></p>
+  <p class="footer">Auto-updated from data/fixtures.csv</p>
 </main>
 
 <script src="js/fixtures.js"></script>
