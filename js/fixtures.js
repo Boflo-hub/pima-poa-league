@@ -4,7 +4,8 @@
   const tbody = document.getElementById("fixturesBody");
   const roundSelect = document.getElementById("roundFilter");
   const badge = document.getElementById("currentRoundBadge");
-  const toggleBtn = document.getElementById("pendingToggle");
+  const pendingBtn = document.getElementById("pendingToggle");
+  const currentBtn = document.getElementById("currentRoundToggle");
   const errorBox = document.getElementById("errorBox");
   const errorMsg = document.getElementById("errorMsg");
 
@@ -128,6 +129,7 @@
         const hasPending = fixtures.some((f) => f.round === r && !f.played);
         if (hasPending) { currentRound = r; break; }
       }
+
       badge.textContent = `Current Round: ${currentRound}`;
 
       // Dropdown
@@ -139,15 +141,29 @@
         roundSelect.appendChild(opt);
       });
 
-      // Pending-only state
+      // STATE
       let pendingOnly = false;
+      let currentOnly = true; // default ON
+
+      // Init buttons UI
+      pendingBtn.classList.toggle("active", pendingOnly);
+
+      currentBtn.classList.toggle("active", currentOnly);
+      currentBtn.classList.toggle("current", currentOnly);
+      currentBtn.setAttribute("aria-pressed", currentOnly ? "true" : "false");
+
+      // Force current round filter initially
+      roundSelect.value = currentRound;
+      roundSelect.disabled = currentOnly;
 
       function render() {
-        const filterRound = roundSelect.value || "all";
+        const chosenRound = roundSelect.value || "all";
+        const roundToUse = currentOnly ? currentRound : chosenRound;
+
         tbody.innerHTML = "";
 
         fixtures
-          .filter((f) => filterRound === "all" || f.round === filterRound)
+          .filter((f) => roundToUse === "all" || f.round === roundToUse)
           .filter((f) => !pendingOnly || !f.played)
           .forEach((f) => {
             const tr = document.createElement("tr");
@@ -168,17 +184,35 @@
           });
       }
 
-      // Default view = current round
-      roundSelect.value = currentRound;
       render();
 
+      // Handlers
       roundSelect.addEventListener("change", render);
 
-      toggleBtn.addEventListener("click", () => {
+      pendingBtn.addEventListener("click", () => {
         pendingOnly = !pendingOnly;
-        toggleBtn.classList.toggle("active", pendingOnly);
-        toggleBtn.setAttribute("aria-pressed", pendingOnly ? "true" : "false");
-        toggleBtn.textContent = pendingOnly ? "Showing Pending Only" : "Show Pending Only";
+        pendingBtn.classList.toggle("active", pendingOnly);
+        pendingBtn.setAttribute("aria-pressed", pendingOnly ? "true" : "false");
+        pendingBtn.textContent = pendingOnly ? "Showing Pending Only" : "Show Pending Only";
+        render();
+      });
+
+      currentBtn.addEventListener("click", () => {
+        currentOnly = !currentOnly;
+
+        currentBtn.classList.toggle("active", currentOnly);
+        currentBtn.classList.toggle("current", currentOnly);
+        currentBtn.setAttribute("aria-pressed", currentOnly ? "true" : "false");
+        currentBtn.textContent = currentOnly ? "Current Round Only" : "All Rounds Mode";
+
+        // If current-only is ON, lock dropdown to current round
+        if (currentOnly) {
+          roundSelect.value = currentRound;
+          roundSelect.disabled = true;
+        } else {
+          roundSelect.disabled = false;
+        }
+
         render();
       });
     })
