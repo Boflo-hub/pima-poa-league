@@ -1,11 +1,10 @@
-// js/fixtures.js  (for CSV headers: Round, Player A, Player B, Played?, Winner)
-
 (function () {
   const CSV_PATH = "data/fixtures.csv";
 
   const tbody = document.getElementById("fixturesBody");
   const roundSelect = document.getElementById("roundFilter");
   const badge = document.getElementById("currentRoundBadge");
+  const toggleBtn = document.getElementById("pendingToggle");
   const errorBox = document.getElementById("errorBox");
   const errorMsg = document.getElementById("errorMsg");
 
@@ -15,7 +14,6 @@
     if (errorBox) errorBox.style.display = "block";
   }
 
-  // Handles commas inside quotes too (safer than split(","))
   function parseCSVLine(line) {
     const out = [];
     let cur = "";
@@ -39,7 +37,6 @@
   }
 
   function normalizeHeader(h) {
-    // normalize: remove spaces, lowercase, remove punctuation like ?
     return (h || "")
       .trim()
       .toLowerCase()
@@ -72,7 +69,6 @@
       const headerRaw = parseCSVLine(lines[0]);
       const header = headerRaw.map(normalizeHeader);
 
-      // helper: find column by multiple possible names
       const colIndex = (names) => {
         for (const n of names) {
           const idx = header.indexOf(normalizeHeader(n));
@@ -81,7 +77,6 @@
         return -1;
       };
 
-      // Your CSV columns
       const idx = {
         round: colIndex(["Round"]),
         a: colIndex(["PlayerA", "Player A"]),
@@ -96,8 +91,7 @@
 
       if (missing.length) {
         throw new Error(
-          `Missing column(s): ${missing.join(", ")}.\n` +
-          `Your header must include: Round, Player A, Player B, Played?, Winner`
+          `Missing column(s): ${missing.join(", ")}. Expected: Round, Player A, Player B, Played?, Winner`
         );
       }
 
@@ -115,7 +109,7 @@
 
         if (!round || !a || !b) continue;
 
-        const played = playedVal === "YES" || playedVal === "Y" || playedVal === "TRUE" || playedVal === "1";
+        const played = ["YES", "Y", "TRUE", "1"].includes(playedVal);
         roundsSet.add(round);
 
         fixtures.push({ round, a, b, played, winner });
@@ -145,15 +139,19 @@
         roundSelect.appendChild(opt);
       });
 
-      function render(filter) {
+      // Pending-only state
+      let pendingOnly = false;
+
+      function render() {
+        const filterRound = roundSelect.value || "all";
         tbody.innerHTML = "";
 
         fixtures
-          .filter((f) => filter === "all" || f.round === filter)
+          .filter((f) => filterRound === "all" || f.round === filterRound)
+          .filter((f) => !pendingOnly || !f.played)
           .forEach((f) => {
             const tr = document.createElement("tr");
 
-            // Score column: show winner if played, otherwise "vs"
             const scoreText = f.played
               ? (f.winner ? `WIN: ${f.winner}` : "Played")
               : "vs";
@@ -170,17 +168,21 @@
           });
       }
 
-      // Default = current round
+      // Default view = current round
       roundSelect.value = currentRound;
-      render(currentRound);
+      render();
 
-      roundSelect.addEventListener("change", (e) => render(e.target.value));
+      roundSelect.addEventListener("change", render);
+
+      toggleBtn.addEventListener("click", () => {
+        pendingOnly = !pendingOnly;
+        toggleBtn.classList.toggle("active", pendingOnly);
+        toggleBtn.setAttribute("aria-pressed", pendingOnly ? "true" : "false");
+        toggleBtn.textContent = pendingOnly ? "Showing Pending Only" : "Show Pending Only";
+        render();
+      });
     })
     .catch((err) => {
-      showError(
-        `${err.message}\n\nQuick checks:\n` +
-        `1) Confirm this opens: /data/fixtures.csv\n` +
-        `2) Confirm header matches: Round, Player A, Player B, Played?, Winner\n`
-      );
+      showError(err.message);
     });
 })();
