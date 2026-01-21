@@ -1,161 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Pima Poa League Table</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <title>Pima Poa League Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
-<style>
-:root{
-  --bg:#0c0f14;
-  --card:#141922;
-  --green:#18c964;
-  --red:#ff4d4d;
-  --text:#e6e8eb;
-  --muted:#9aa0a6;
-}
+  <style>
+    :root{
+      --bg:#0c0f14;
+      --card:#141922;
+      --green:#18c964;
+      --red:#ff4d4d;
+      --text:#e6e8eb;
+      --muted:#9aa0a6;
+    }
 
-body{
-  margin:0;
-  background:linear-gradient(180deg,#0b0e13,#111827);
-  font-family:Inter,system-ui;
-  color:var(--text);
-}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#0b0e13,#111827);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+    }
 
-.container{
-  max-width:1100px;
-  margin:auto;
-  padding:24px;
-}
+    .container{
+      max-width:1100px;
+      margin:auto;
+      padding:24px;
+    }
 
-h1{
-  text-align:center;
-  margin-bottom:10px;
-  font-weight:800;
-  letter-spacing:1px;
-}
+    h1{
+      text-align:center;
+      margin:10px 0 18px;
+      font-weight:800;
+      letter-spacing:1px;
+    }
 
-.controls{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  margin: 0 0 18px 0;
-  align-items:center;
-}
+    /* optional: style the season dropdown even if you don't use it yet */
+    .chipSelect{
+      display:block;
+      margin:0 auto 14px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      outline:none;
+      max-width:260px;
+    }
 
-.chipSelect{
-  appearance:none;
-  background: rgba(20,25,34,0.8);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--text);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor:pointer;
-}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:var(--card);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
 
-.chipSelect:focus{
-  outline: 2px solid rgba(24,201,100,0.35);
-  outline-offset: 2px;
-}
+    thead{
+      background:#1b2130;
+    }
 
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:var(--card);
-  border-radius:12px;
-  overflow:hidden;
-}
+    th,td{
+      padding:10px 8px;
+      text-align:center;
+      font-size:14px;
+      white-space:nowrap;
+    }
 
-thead{
-  background:#1b2130;
-}
+    th{
+      font-weight:600;
+      color:var(--muted);
+      letter-spacing:.03em;
+    }
 
-th,td{
-  padding:10px 8px;
-  text-align:center;
-  font-size:14px;
-}
+    td.player{
+      text-align:left;
+      font-weight:600;
+    }
 
-th{
-  font-weight:600;
-  color:var(--muted);
-}
+    tr:nth-child(even){
+      background:#111624;
+    }
 
-td.player{
-  text-align:left;
-  font-weight:600;
-}
+    .pos{
+      font-weight:800;
+      border-radius:8px;
+      padding:6px 0;
+    }
 
-tr:nth-child(even){
-  background:#111624;
-}
+    .top5{
+      background:rgba(24,201,100,0.16);
+      color:var(--green);
+    }
 
-.posBadge{
-  display:inline-block;
-  min-width:34px;
-  padding:6px 10px;
-  border-radius:10px;
-  font-weight:800;
-}
+    .bottom2{
+      background:rgba(255,77,77,0.16);
+      color:var(--red);
+    }
 
-.top5{
-  background:rgba(24,201,100,0.15);
-  color:var(--green);
-}
-
-.bottom2{
-  background:rgba(255,77,77,0.15);
-  color:var(--red);
-}
-
-.footer{
-  text-align:center;
-  margin-top:14px;
-  color:var(--muted);
-  font-size:13px;
-}
-
-#errorBox{
-  display:none;
-  margin: 12px auto 18px auto;
-  max-width: 900px;
-  background: rgba(255,77,77,0.12);
-  border: 1px solid rgba(255,77,77,0.25);
-  color: #ffd6d6;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-weight: 600;
-}
-</style>
+    .footer{
+      text-align:center;
+      margin-top:14px;
+      color:var(--muted);
+      font-size:13px;
+    }
+  </style>
 </head>
 
 <body>
-<div class="container">
-  <h1>🎱 Pima Poa League Table</h1>
+  <div class="container">
+    <h1>🎱 Pima Poa League Table</h1>
 
-  <div class="controls">
-    <select id="seasonSelect" class="chipSelect"></select>
+    <!-- You can delete this select if you’re not using seasons yet -->
+    <select id="seasonSelect" class="chipSelect">
+      <option value="all">All Seasons</option>
+      <option value="1">Season 1</option>
+    </select>
+
+    <table id="league">
+      <thead>
+        <tr>
+          <th>POS</th><th>PLAYER</th><th>P</th><th>W</th><th>L</th>
+          <th>BF</th><th>BA</th><th>BD</th><th>7B</th><th>BP</th><th>PTS</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="footer">Auto-updated from data/league.csv</div>
   </div>
 
-  <div id="errorBox"></div>
+  <script>
+    // CSV format expected:
+    // Season,Pos,Player,P,W,L,BF,BA,BD,7B,BP,PTS
+    fetch("data/league.csv")
+      .then(r => r.text())
+      .then(text => {
+        const lines = text.trim().split("\n");
+        if (lines.length <= 1) return;
 
-  <table id="league">
-    <thead>
-      <tr>
-        <th>POS</th><th>PLAYER</th><th>P</th><th>W</th><th>L</th>
-        <th>BF</th><th>BA</th><th>BD</th><th>7B</th><th>BP</th><th>PTS</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+        const rows = lines.slice(1);
+        const tbody = document.querySelector("#league tbody");
 
-  <div class="footer">Auto-updated from data/league.csv</div>
-</div>
+        // Basic season filter (optional)
+        const seasonSelect = document.getElementById("seasonSelect");
+        const parsed = rows
+          .map(line => line.split(",").map(x => (x ?? "").trim()))
+          .filter(c => c.length >= 12);
 
-<!-- IMPORTANT: external script -->
-<script src="js/league.js"></script>
+        function render(selectedSeason = "1") {
+          tbody.innerHTML = "";
+
+          const filtered = parsed.filter(c => {
+            // c[0] = Season
+            if (!seasonSelect) return true;
+            const val = seasonSelect.value || selectedSeason;
+            return val === "all" ? true : c[0] === val;
+          });
+
+          filtered.forEach((c, i) => {
+            // c indexes:
+            // 0 Season, 1 Pos, 2 Player, 3 P, 4 W, 5 L, 6 BF, 7 BA, 8 BD, 9 7B, 10 BP, 11 PTS
+            const tr = document.createElement("tr");
+            const posClass = i < 5 ? "top5" : i >= filtered.length - 2 ? "bottom2" : "";
+
+            tr.innerHTML = `
+              <td class="pos ${posClass}">${c[1]}</td>
+              <td class="player">${c[2]}</td>
+              <td>${c[3]}</td>
+              <td>${c[4]}</td>
+              <td>${c[5]}</td>
+              <td>${c[6]}</td>
+              <td>${c[7]}</td>
+              <td>${c[8]}</td>
+              <td>${c[9]}</td>
+              <td>${c[10]}</td>
+              <td><strong>${c[11]}</strong></td>
+            `;
+
+            tbody.appendChild(tr);
+          });
+        }
+
+        if (seasonSelect) {
+          seasonSelect.addEventListener("change", () => render());
+        }
+        render();
+      })
+      .catch(err => {
+        console.error("League CSV load failed:", err);
+      });
+  </script>
 </body>
 </html>
