@@ -1,14 +1,15 @@
 fetch("data/league.csv")
   .then(res => {
-    if (!res.ok) throw new Error("league.csv not found");
+    if (!res.ok) throw new Error("data/league.csv not found");
     return res.text();
   })
   .then(csv => {
     const lines = csv.trim().split("\n");
+    if (lines.length < 2) throw new Error("league.csv is empty");
+
     const header = lines[0].split(",").map(h => h.trim());
     const rows = lines.slice(1);
 
-    // REQUIRED columns
     const idx = {
       season: header.indexOf("Season"),
       pos: header.indexOf("Pos"),
@@ -24,24 +25,24 @@ fetch("data/league.csv")
       pts: header.indexOf("PTS"),
     };
 
-    // Basic safety checks
+    // Validate required columns
     for (const k in idx) {
       if (idx[k] === -1) throw new Error(`Missing column in league.csv: ${k}`);
     }
 
+    // Parse rows
     const data = rows
       .map(line => line.split(",").map(x => (x ?? "").trim()))
-      .filter(cols => cols[idx.player] && cols[idx.pos] && cols[idx.season]);
+      .filter(c => c[idx.season] && c[idx.pos] && c[idx.player]);
 
-    const seasons = [...new Set(data.map(cols => cols[idx.season]))]
+    const seasons = [...new Set(data.map(c => c[idx.season]))]
       .map(Number)
       .sort((a, b) => a - b)
       .map(String);
 
     const seasonSelect = document.getElementById("seasonSelect");
-    if (!seasonSelect) throw new Error("seasonSelect element not found in index.html");
+    if (!seasonSelect) throw new Error("seasonSelect not found in HTML");
 
-    // Build dropdown
     seasonSelect.innerHTML = "";
     seasons.forEach(s => {
       const opt = document.createElement("option");
@@ -50,55 +51,47 @@ fetch("data/league.csv")
       seasonSelect.appendChild(opt);
     });
 
-    // Default: latest season
-    const currentSeason = seasons[seasons.length - 1] || "1";
-    seasonSelect.value = currentSeason;
+    const tbody = document.querySelector("#league tbody");
+    if (!tbody) throw new Error("League table tbody not found");
 
     function render(season) {
-      // Filter to selected season
-      const seasonRows = data
-        .filter(cols => cols[idx.season] === season)
-        .sort((a, b) => Number(a[idx.pos]) - Number(b[idx.pos]));
-
-      const tbody = document.querySelector("#leagueTable tbody");
-      if (!tbody) throw new Error("leagueTable tbody not found");
-
       tbody.innerHTML = "";
 
-      seasonRows.forEach(cols => {
-        const pos = Number(cols[idx.pos]);
-        const player = cols[idx.player];
+      const seasonRows = data
+        .filter(c => c[idx.season] === season)
+        .sort((a, b) => Number(a[idx.pos]) - Number(b[idx.pos]));
+
+      const n = seasonRows.length;
+
+      seasonRows.forEach(c => {
+        const posNum = Number(c[idx.pos]);
+        const posClass =
+          posNum <= 5 ? "top5" :
+          posNum >= (n - 1) ? "bottom2" : ""; // bottom 2
 
         const tr = document.createElement("tr");
-
-        // zone coloring example (top5 green, bottom2 red)
-        let zoneClass = "";
-        if (pos <= 5) zoneClass = "zone-top";
-        if (pos >= (seasonRows.length - 1)) zoneClass = "zone-bottom"; // bottom 2
-
         tr.innerHTML = `
-          <td class="pos ${zoneClass}">${cols[idx.pos]}</td>
-          <td class="player">${player}</td>
-          <td>${cols[idx.p]}</td>
-          <td>${cols[idx.w]}</td>
-          <td>${cols[idx.l]}</td>
-          <td>${cols[idx.bf]}</td>
-          <td>${cols[idx.ba]}</td>
-          <td>${cols[idx.bd]}</td>
-          <td>${cols[idx.seven]}</td>
-          <td>${cols[idx.bp]}</td>
-          <td class="pts">${cols[idx.pts]}</td>
+          <td><span class="posBadge ${posClass}">${c[idx.pos]}</span></td>
+          <td class="player">${c[idx.player]}</td>
+          <td>${c[idx.p]}</td>
+          <td>${c[idx.w]}</td>
+          <td>${c[idx.l]}</td>
+          <td>${c[idx.bf]}</td>
+          <td>${c[idx.ba]}</td>
+          <td>${c[idx.bd]}</td>
+          <td>${c[idx.seven]}</td>
+          <td>${c[idx.bp]}</td>
+          <td><strong>${c[idx.pts]}</strong></td>
         `;
-
         tbody.appendChild(tr);
       });
-
-      // Optional label somewhere:
-      const label = document.getElementById("seasonLabel");
-      if (label) label.textContent = `Season ${season}`;
     }
 
+    // Default to latest season
+    const currentSeason = seasons[seasons.length - 1] || "1";
+    seasonSelect.value = currentSeason;
     render(currentSeason);
+
     seasonSelect.addEventListener("change", e => render(e.target.value));
   })
   .catch(err => {
