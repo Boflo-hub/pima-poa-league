@@ -32,9 +32,33 @@ body{
 
 h1{
   text-align:center;
-  margin-bottom:18px;
+  margin-bottom:10px;
   font-weight:800;
   letter-spacing:1px;
+}
+
+.controls{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin: 0 0 18px 0;
+  align-items:center;
+}
+
+.chipSelect{
+  appearance:none;
+  background: rgba(20,25,34,0.8);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor:pointer;
+}
+
+.chipSelect:focus{
+  outline: 2px solid rgba(24,201,100,0.35);
+  outline-offset: 2px;
 }
 
 table{
@@ -69,10 +93,12 @@ tr:nth-child(even){
   background:#111624;
 }
 
-.pos{
+.posBadge{
+  display:inline-block;
+  min-width:34px;
+  padding:6px 10px;
+  border-radius:10px;
   font-weight:800;
-  border-radius:6px;
-  padding:4px 0;
 }
 
 .top5{
@@ -91,13 +117,31 @@ tr:nth-child(even){
   color:var(--muted);
   font-size:13px;
 }
+
+#errorBox{
+  display:none;
+  margin: 12px auto 18px auto;
+  max-width: 900px;
+  background: rgba(255,77,77,0.12);
+  border: 1px solid rgba(255,77,77,0.25);
+  color: #ffd6d6;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
   <h1>🎱 Pima Poa League Table</h1>
-  <select id="seasonSelect" class="chipSelect"></select>
+
+  <div class="controls">
+    <select id="seasonSelect" class="chipSelect"></select>
+  </div>
+
+  <div id="errorBox"></div>
+
   <table id="league">
     <thead>
       <tr>
@@ -108,39 +152,10 @@ tr:nth-child(even){
     <tbody></tbody>
   </table>
 
-  <div class="footer">Auto-updated from league.csv</div>
+  <div class="footer">Auto-updated from data/league.csv</div>
 </div>
 
-<script>
-fetch("data/league.csv")
-.then(r=>r.text())
-.then(text=>{
-  const rows=text.trim().split("\n").slice(1);
-  const tbody=document.querySelector("#league tbody");
-
-  rows.forEach((row,i)=>{
-    const c=row.split(",");
-    const tr=document.createElement("tr");
-
-    const posClass = i < 5 ? "top5" : i >= rows.length-2 ? "bottom2" : "";
-
-    tr.innerHTML=`
-      <td class="pos ${posClass}">${c[0]}</td>
-      <td class="player">${c[1]}</td>
-      <td>${c[2]}</td>
-      <td>${c[3]}</td>
-      <td>${c[4]}</td>
-      <td>${c[5]}</td>
-      <td>${c[6]}</td>
-      <td>${c[7]}</td>
-      <td>${c[8]}</td>
-      <td>${c[9]}</td>
-      <td><strong>${c[10]}</strong></td>
-    `;
-    tbody.appendChild(tr);
-  });
-});
-</script>
-
+<!-- IMPORTANT: external script -->
+<script src="js/league.js"></script>
 </body>
 </html>
