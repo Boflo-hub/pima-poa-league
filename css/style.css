@@ -333,3 +333,59 @@ body{
   0%,100%{ box-shadow: 0 0 18px rgba(0,255,185,.18); }
   50%{ box-shadow: 0 0 28px rgba(0,255,185,.34); }
 }
+/* ---------- Ranking (stats-like) tweaks ---------- */
+.tableWrap.compact { padding: 12px 14px 16px; }
+
+.tbl.stats th, .tbl.stats td {
+  padding: 10px 10px;
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+
+.tbl.stats td .name {
+  font-weight: 700;
+}
+
+.tbl.stats td .score {
+  font-weight: 800;
+}
+
+/* POS badges */
+.pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 30px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.pos.neutral {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85);
+}
+
+.pos.bottomDanger {
+  background: rgba(255, 77, 77, 0.18);
+  color: #ff6b6b;
+  box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.16) inset;
+}
+
+/* Animated neon for top 3 */
+.pos.topGlow {
+  background: rgba(0, 255, 198, 0.14);
+  color: #7CFFD9;
+  box-shadow:
+    0 0 0 1px rgba(0,255,198,.18) inset,
+    0 0 18px rgba(0,255,198,.18);
+  animation: neonPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes neonPulse {
+  0%, 100% { filter: brightness(1); transform: translateY(0); }
+  50% { filter: brightness(1.2); transform: translateY(-1px); }
+}
+
+/* left aligned player column */
+.tbl.stats td.left { text-align: left; }
