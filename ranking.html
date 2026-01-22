@@ -5,17 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pima Poa League — Ranking</title>
 
-  <!-- Sporty font (matches your site vibe) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Your main site styles -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <!-- Top bar (same component family as fixtures) -->
   <header class="top">
     <div class="brand">
       <div class="logo">8</div>
@@ -27,7 +24,6 @@
 
     <div class="controls">
       <div id="seasonBadge" class="badge">Season: —</div>
-
       <select id="seasonSelect" class="select">
         <option value="" disabled selected>Loading…</option>
       </select>
@@ -35,17 +31,54 @@
   </header>
 
   <main class="wrap">
-    <!-- Error banner -->
     <div id="errBox" class="err" style="display:none;">
       <div class="errTitle">Couldn't load ranking table</div>
       <div id="errMsg" class="errMsg"></div>
     </div>
 
-    <!-- Card -->
     <section class="card">
       <div class="cardHead">
         <div class="cardTitle">Standings</div>
         <div id="meta" class="metaChip">Players: —</div>
+      </div>
+
+      <!-- ✅ INSIGHTS -->
+      <div class="insights" id="insights">
+        <div class="insight">
+          <div class="k">Score Leader</div>
+          <div class="v" id="iLeader">—</div>
+          <div class="s" id="iLeaderSub">—</div>
+        </div>
+
+        <div class="insight">
+          <div class="k">Most Wins</div>
+          <div class="v" id="iWins">—</div>
+          <div class="s" id="iWinsSub">—</div>
+        </div>
+
+        <div class="insight">
+          <div class="k">Most Bonus</div>
+          <div class="v" id="iBonus">—</div>
+          <div class="s" id="iBonusSub">—</div>
+        </div>
+
+        <div class="insight">
+          <div class="k">Most 7-Ballers</div>
+          <div class="v" id="i7b">—</div>
+          <div class="s" id="i7bSub">—</div>
+        </div>
+
+        <div class="insight">
+          <div class="k">Best Efficiency</div>
+          <div class="v" id="iEff">—</div>
+          <div class="s" id="iEffSub">—</div>
+        </div>
+
+        <div class="insight">
+          <div class="k">Top-3 Spread</div>
+          <div class="v" id="iSpread">—</div>
+          <div class="s" id="iSpreadSub">—</div>
+        </div>
       </div>
 
       <div class="tableWrap compact">
