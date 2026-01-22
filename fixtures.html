@@ -2,92 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pima Poa League – Fixtures</title>
+  <title>Pima Poa — Fixtures</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">8</div>
+        <div class="titles">
+          <h1>Pima Poa League</h1>
+          <p class="sub">Fixtures & Results</p>
+        </div>
+      </div>
 
-<header class="top">
-  <div class="brand">
-    <div class="logo">8</div>
-    <div>
-      <h1>Fixtures & Results</h1>
-      <p class="sub">Pima Poa Pool League</p>
-    </div>
+      <nav class="nav">
+        <a class="tab" href="./index.html">League</a>
+        <a class="tab active" href="./fixtures.html">Fixtures</a>
+        <a class="tab" href="./ranking.html">Ranking</a>
+      </nav>
+
+      <div class="controls">
+        <div id="currentRoundBadge" class="badge">Current Round: —</div>
+        <select id="roundFilter" class="select">
+          <option value="all">All Rounds</option>
+        </select>
+      </div>
+    </header>
+
+    <div id="errorBox" class="error" style="display:none;"></div>
+
+    <section class="card">
+      <!-- Your fixtures tables go here (pending + played) -->
+      <div class="pageFooter">Auto-updated from <code>data/fixtures.csv</code></div>
+    </section>
   </div>
 
-  <div class="controls">
-    <div id="currentRoundBadge" class="badge">Current Round: —</div>
-    <div id="roundSummaryBadge" class="badge ghost">Played: — / —</div>
-
-    <select id="roundFilter" class="select">
-      <option value="all">All Rounds</option>
-    </select>
-
-    <button id="pendingToggle" class="btn">Show Pending Only</button>
-    <button id="currentRoundToggle" class="btn active">Current Round Only</button>
-  </div>
-</header>
-
-<main class="wrap">
-  <div id="errorBox" class="error" style="display:none;">
-    <div class="error-title">Couldn’t load fixtures</div>
-    <div id="errorMsg" class="error-msg"></div>
-  </div>
-
-  <section class="section">
-    <div class="section-head">
-      <h2>Pending</h2>
-      <span class="chip pending"><span class="dot"></span> To play</span>
-    </div>
-
-    <div class="table-card">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Player A</th>
-            <th>VS</th>
-            <th>Player B</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="pendingBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-head">
-      <h2>Played</h2>
-      <span class="chip played"><span class="dot"></span> Done</span>
-    </div>
-
-    <div class="table-card">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Player A</th>
-            <th>Result</th>
-            <th>Player B</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="playedBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <p class="footer">Auto-updated from data/fixtures.csv</p>
-</main>
-
-<script src="js/fixtures.js"></script>
+  <script src="js/fixtures.js"></script>
 </body>
 </html>
