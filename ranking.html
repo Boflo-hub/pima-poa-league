@@ -2,68 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pima Poa League – Ranking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pima Poa League — Ranking</title>
 
-  <!-- Sporty font -->
+  <!-- Sporty font (matches your site vibe) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Your site CSS -->
+  <!-- Your main site styles -->
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-
-<header class="top">
-  <div class="brand">
-    <div class="logo">8</div>
-    <div>
-      <h1>Ranking Table</h1>
-      <p class="sub">Pima Poa Pool League</p>
-    </div>
-  </div>
-
-  <div class="controls">
-    <div class="badge" id="seasonBadge">Season: —</div>
-
-    <select id="seasonSelect" class="chipSelect">
-      <option value="all">All Seasons</option>
-    </select>
-  </div>
-</header>
-
-<main class="wrap">
-
-  <div id="errorBox" class="errorBox" style="display:none;"></div>
-
-  <section class="card">
-    <div class="sectionTitleRow">
-      <h2>Standings</h2>
-      <div class="badge subtle" id="rowCountBadge">Players: —</div>
+  <!-- Top bar (same component family as fixtures) -->
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Ranking Table</h1>
+        <p class="sub">Pima Poa Pool League</p>
+      </div>
     </div>
 
-    <div class="tableWrap">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th style="width:90px;">POS</th>
-            <th style="text-align:left;">PLAYER</th>
-            <th style="width:90px;">W</th>
-            <th style="width:110px;">BONUS</th>
-            <th style="width:110px;">7B</th>
-            <th style="width:140px;">SCORE</th>
-          </tr>
-        </thead>
-        <tbody id="rankingBody"></tbody>
-      </table>
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+
+      <select id="seasonSelect" class="select">
+        <option value="" disabled selected>Loading…</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Error banner -->
+    <div id="errBox" class="err" style="display:none;">
+      <div class="errTitle">Couldn't load ranking table</div>
+      <div id="errMsg" class="errMsg"></div>
     </div>
 
-    <p class="footer">Auto-updated from <strong>data/ranking.csv</strong></p>
-  </section>
+    <!-- Card -->
+    <section class="card">
+      <div class="cardHead">
+        <div class="cardTitle">Standings</div>
+        <div id="meta" class="metaChip">Players: —</div>
+      </div>
 
-</main>
+      <div class="tableWrap compact">
+        <table class="tbl stats" id="rankingTable">
+          <thead>
+            <tr>
+              <th style="width:84px;">POS</th>
+              <th style="text-align:left;">PLAYER</th>
+              <th style="width:70px;">W</th>
+              <th style="width:90px;">BONUS</th>
+              <th style="width:70px;">7B</th>
+              <th style="width:90px;">SCORE</th>
+            </tr>
+          </thead>
+          <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
 
-<script src="js/ranking.js"></script>
+      <p class="footer">Auto-updated from <code>data/ranking.csv</code></p>
+    </section>
+  </main>
+
+  <script src="js/ranking.js"></script>
 </body>
 </html>
