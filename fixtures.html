@@ -11,8 +11,10 @@
 
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
   <div class="wrap">
+
     <header class="topbar">
       <div class="brand">
         <div class="logo">8</div>
@@ -30,18 +32,52 @@
 
       <div class="controls">
         <div id="currentRoundBadge" class="badge">Current Round: —</div>
+        <div id="playedCountBadge" class="badge">Played: —/—</div>
         <select id="roundFilter" class="select">
           <option value="all">All Rounds</option>
         </select>
+        <button id="pendingOnlyBtn" class="tab" type="button">Show Pending Only</button>
+        <button id="currentRoundBtn" class="tab" type="button">Current Round Only</button>
       </div>
     </header>
 
+    <!-- JS error messages appear here -->
     <div id="errorBox" class="error" style="display:none;"></div>
 
     <section class="card">
-      <!-- Your fixtures tables go here (pending + played) -->
+      <h2 style="margin:8px 0 12px;">Pending</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th style="text-align:left;padding-left:12px;">Player A</th>
+            <th>VS</th>
+            <th style="text-align:left;padding-left:12px;">Player B</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+
+      <div style="height:14px;"></div>
+
+      <h2 style="margin:8px 0 12px;">Played</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th style="text-align:left;padding-left:12px;">Player A</th>
+            <th>Result</th>
+            <th style="text-align:left;padding-left:12px;">Player B</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="playedBody"></tbody>
+      </table>
+
       <div class="pageFooter">Auto-updated from <code>data/fixtures.csv</code></div>
     </section>
+
   </div>
 
   <script src="js/fixtures.js"></script>
