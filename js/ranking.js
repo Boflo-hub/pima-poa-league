@@ -1,4 +1,4 @@
-// ranking.js — reads data/ranking.csv and renders a compact stats table
+// ranking.js — reads data/ranking.csv and renders a compact stats table + insights
 
 fetch("data/ranking.csv", { cache: "no-store" })
   .then(res => {
@@ -18,7 +18,21 @@ fetch("data/ranking.csv", { cache: "no-store" })
     const seasonBadge = document.getElementById("seasonBadge");
     const meta = document.getElementById("meta");
 
-    // Expected columns (your CSV)
+    // Insights DOM
+    const iLeader = document.getElementById("iLeader");
+    const iLeaderSub = document.getElementById("iLeaderSub");
+    const iWins = document.getElementById("iWins");
+    const iWinsSub = document.getElementById("iWinsSub");
+    const iBonus = document.getElementById("iBonus");
+    const iBonusSub = document.getElementById("iBonusSub");
+    const i7b = document.getElementById("i7b");
+    const i7bSub = document.getElementById("i7bSub");
+    const iEff = document.getElementById("iEff");
+    const iEffSub = document.getElementById("iEffSub");
+    const iSpread = document.getElementById("iSpread");
+    const iSpreadSub = document.getElementById("iSpreadSub");
+
+    // Expected columns:
     // Season,Position,Player,Wins,Bonus,7-Baller,Ranking Score
     const idx = {
       season: header.indexOf("Season"),
@@ -30,7 +44,7 @@ fetch("data/ranking.csv", { cache: "no-store" })
       score: header.indexOf("Ranking Score")
     };
 
-    // Validate columns
+    // Validate
     for (const [k, v] of Object.entries(idx)) {
       if (v === -1) throw new Error(`Missing column in ranking.csv: ${k}`);
     }
@@ -44,7 +58,6 @@ fetch("data/ranking.csv", { cache: "no-store" })
       const season = cols[idx.season];
       const pos = cols[idx.pos];
       const player = cols[idx.player];
-
       if (!season || !pos || !player) return;
 
       seasonsSet.add(season);
@@ -63,7 +76,7 @@ fetch("data/ranking.csv", { cache: "no-store" })
     const seasons = [...seasonsSet].map(Number).sort((a, b) => a - b).map(String);
     if (seasons.length === 0) throw new Error("No seasons found in ranking.csv.");
 
-    // Populate season dropdown
+    // Dropdown
     seasonSelect.innerHTML = "";
     seasons.forEach(s => {
       const opt = document.createElement("option");
@@ -72,14 +85,95 @@ fetch("data/ranking.csv", { cache: "no-store" })
       seasonSelect.appendChild(opt);
     });
 
-    // Default season = latest
+    // Default = latest season
     const defaultSeason = seasons[seasons.length - 1];
     seasonSelect.value = defaultSeason;
 
     function posBadgeClass(pos, total) {
-      if (pos <= 3) return "pos topGlow";          // top 3 glow
-      if (pos >= total - 1) return "pos bottomDanger"; // bottom 2 red (if total>=2)
-      return "pos neutral";                         // rest muted
+      if (pos <= 3) return "pos topGlow";
+      if (total >= 2 && pos >= total - 1) return "pos bottomDanger";
+      return "pos neutral";
+    }
+
+    function topBy(arr, selector, tieBreaker) {
+      // returns {item, value}
+      let best = null;
+      let bestVal = -Infinity;
+
+      for (const item of arr) {
+        const val = selector(item);
+        if (val > bestVal) {
+          bestVal = val;
+          best = item;
+        } else if (val === bestVal && tieBreaker) {
+          // tie-breaker (e.g., higher score / lower pos)
+          if (tieBreaker(item, best)) best = item;
+        }
+      }
+      return { item: best, value: bestVal };
+    }
+
+    function renderInsights(seasonRows) {
+      if (!seasonRows.length) return;
+
+      // Score Leader
+      const scoreLeader = seasonRows[0]; // sorted by pos already
+      iLeader.textContent = scoreLeader.player;
+      iLeaderSub.textContent = `Score: ${scoreLeader.score} • Pos: ${scoreLeader.pos}`;
+
+      // Most Wins (tie -> higher score)
+      const winsTop = topBy(
+        seasonRows,
+        r => r.wins,
+        (a, b) => (a.score > b.score)
+      );
+      iWins.textContent = winsTop.item ? winsTop.item.player : "—";
+      iWinsSub.textContent = winsTop.item ? `Wins: ${winsTop.item.wins} • Score: ${winsTop.item.score}` : "—";
+
+      // Most Bonus (tie -> higher score)
+      const bonusTop = topBy(
+        seasonRows,
+        r => r.bonus,
+        (a, b) => (a.score > b.score)
+      );
+      iBonus.textContent = bonusTop.item ? bonusTop.item.player : "—";
+      iBonusSub.textContent = bonusTop.item ? `Bonus: ${bonusTop.item.bonus} • Score: ${bonusTop.item.score}` : "—";
+
+      // Most 7B (tie -> higher score)
+      const sevenTop = topBy(
+        seasonRows,
+        r => r.seven,
+        (a, b) => (a.score > b.score)
+      );
+      i7b.textContent = sevenTop.item ? sevenTop.item.player : "—";
+      i7bSub.textContent = sevenTop.item ? `7B: ${sevenTop.item.seven} • Score: ${sevenTop.item.score}` : "—";
+
+      // Best efficiency = score per win (min wins >= 1)
+      const eligible = seasonRows.filter(r => r.wins > 0);
+      if (eligible.length) {
+        const effTop = topBy(
+          eligible,
+          r => r.score / r.wins,
+          (a, b) => (a.score > b.score)
+        );
+        const eff = effTop.item ? (effTop.item.score / effTop.item.wins) : 0;
+        iEff.textContent = effTop.item ? effTop.item.player : "—";
+        iEffSub.textContent = effTop.item ? `Score/W: ${eff.toFixed(2)} • (${effTop.item.score}/${effTop.item.wins})` : "—";
+      } else {
+        iEff.textContent = "—";
+        iEffSub.textContent = "No wins yet";
+      }
+
+      // Top-3 spread
+      const s1 = seasonRows.find(r => r.pos === 1)?.score ?? null;
+      const s3 = seasonRows.find(r => r.pos === 3)?.score ?? null;
+      if (s1 !== null && s3 !== null) {
+        iSpread.textContent = `${Math.max(0, s1 - s3)}`;
+        iSpreadSub.textContent = `#1: ${s1} • #3: ${s3}`;
+      } else {
+        iSpread.textContent = "—";
+        iSpreadSub.textContent = "Need top 3 data";
+      }
     }
 
     function render(season) {
@@ -91,6 +185,8 @@ fetch("data/ranking.csv", { cache: "no-store" })
 
       seasonBadge.textContent = `Season: ${season}`;
       meta.textContent = `Players: ${seasonRows.length}`;
+
+      renderInsights(seasonRows);
 
       const total = seasonRows.length;
 
