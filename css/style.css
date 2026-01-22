@@ -432,3 +432,56 @@ body{
 @media (max-width: 640px){
   .insights{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* ---------- Head-to-Head ---------- */
+.h2hGrid{
+  display:flex;
+  gap:14px;
+  align-items:stretch;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+
+.h2hSelects{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.h2hVs{
+  font-weight:900;
+  letter-spacing:.12em;
+  opacity:.7;
+}
+
+.h2hStats{
+  display:grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap:10px;
+  flex:1;
+  min-width: 520px;
+}
+
+.h2hStat{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.h2hStat .k{
+  font-size: 12px;
+  letter-spacing:.12em;
+  text-transform: uppercase;
+  opacity:.65;
+}
+
+.h2hStat .v{
+  font-size: 18px;
+  font-weight: 900;
+  margin-top: 4px;
+}
+
+@media (max-width: 980px){
+  .h2hStats{ min-width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
