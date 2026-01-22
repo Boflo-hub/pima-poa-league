@@ -1,185 +1,128 @@
-// js/ranking.js
-(() => {
-  const CSV_URL = "data/ranking.csv";
+// ranking.js — reads data/ranking.csv and renders a compact stats table
 
-  function $(id) { return document.getElementById(id); }
+fetch("data/ranking.csv", { cache: "no-store" })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status} while loading ranking.csv`);
+    return res.text();
+  })
+  .then(csv => {
+    const lines = csv.trim().split("\n");
+    if (lines.length < 2) throw new Error("ranking.csv has no data rows.");
 
-  // CSV parser that supports quoted commas
-  function parseCSV(text) {
-    const rows = [];
-    let row = [];
-    let cur = "";
-    let inQuotes = false;
+    const header = lines[0].split(",").map(h => h.trim());
+    const rows = lines.slice(1);
 
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      const next = text[i + 1];
+    // DOM
+    const tbody = document.getElementById("rankingBody");
+    const seasonSelect = document.getElementById("seasonSelect");
+    const seasonBadge = document.getElementById("seasonBadge");
+    const meta = document.getElementById("meta");
 
-      if (ch === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
-      if (ch === '"') { inQuotes = !inQuotes; continue; }
+    // Expected columns (your CSV)
+    // Season,Position,Player,Wins,Bonus,7-Baller,Ranking Score
+    const idx = {
+      season: header.indexOf("Season"),
+      pos: header.indexOf("Position"),
+      player: header.indexOf("Player"),
+      wins: header.indexOf("Wins"),
+      bonus: header.indexOf("Bonus"),
+      seven: header.indexOf("7-Baller"),
+      score: header.indexOf("Ranking Score")
+    };
 
-      if (!inQuotes && (ch === "\n" || ch === "\r")) {
-        if (cur.length || row.length) {
-          row.push(cur);
-          rows.push(row.map(v => (v ?? "").trim()));
-          row = [];
-          cur = "";
-        }
-        continue;
-      }
-
-      if (!inQuotes && ch === ",") {
-        row.push(cur);
-        cur = "";
-        continue;
-      }
-
-      cur += ch;
+    // Validate columns
+    for (const [k, v] of Object.entries(idx)) {
+      if (v === -1) throw new Error(`Missing column in ranking.csv: ${k}`);
     }
 
-    if (cur.length || row.length) {
-      row.push(cur);
-      rows.push(row.map(v => (v ?? "").trim()));
-    }
+    // Parse
+    const data = [];
+    const seasonsSet = new Set();
 
-    return rows.filter(r => r.some(c => String(c).trim() !== ""));
-  }
+    rows.forEach(line => {
+      const cols = line.split(",").map(x => (x ?? "").trim());
+      const season = cols[idx.season];
+      const pos = cols[idx.pos];
+      const player = cols[idx.player];
 
-  function normHeader(h) {
-    // "Ranking Score" -> "rankingscore", "7-Baller" -> "7baller"
-    return String(h || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-  }
+      if (!season || !pos || !player) return;
 
-  function showError(msg, detail = "") {
-    const box = $("errorBox");
-    if (!box) return;
-    box.style.display = "block";
-    box.innerHTML = `
-      <div style="font-weight:800;margin-bottom:4px;">Couldn't load ranking</div>
-      <div style="opacity:.9">${msg}</div>
-      ${detail ? `<div style="opacity:.7;margin-top:6px;font-size:12px;white-space:pre-wrap">${detail}</div>` : ""}
-    `;
-  }
+      seasonsSet.add(season);
 
-  function classForPos(pos, total) {
-    // neon for top 3, red for bottom 2, else neutral
-    if (pos <= 3) return "pos topGlow";
-    if (pos >= total - 1) return "pos bottomDanger";
-    return "pos neutral";
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    const tbody = $("rankingBody");
-    const seasonSelect = $("seasonSelect");
-    const seasonBadge = $("seasonBadge");
-    const rowCountBadge = $("rowCountBadge");
-
-    if (!tbody || !seasonSelect || !seasonBadge || !rowCountBadge) {
-      showError("Missing required elements in ranking.html (check IDs).");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${CSV_URL}?v=${Date.now()}`);
-      if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-
-      const text = await res.text();
-      const grid = parseCSV(text);
-      if (grid.length < 2) throw new Error("CSV has no data rows.");
-
-      const rawHeader = grid[0];
-      const header = rawHeader.map(normHeader);
-
-      // expected headers from your CSV:
-      // Season,Position,Player,Wins,Bonus,7-Baller,Ranking Score
-      const idx = {
-        season: header.indexOf("season"),
-        pos: header.indexOf("position"),
-        player: header.indexOf("player"),
-        wins: header.indexOf("wins"),
-        bonus: header.indexOf("bonus"),
-        sevenb: header.indexOf("7baller"),
-        score: header.indexOf("rankingscore"),
-      };
-
-      if (idx.pos === -1 || idx.player === -1 || idx.wins === -1 || idx.bonus === -1 || idx.score === -1) {
-        throw new Error(
-          "CSV headers not recognized.\n" +
-          "Need: Season, Position, Player, Wins, Bonus, 7-Baller, Ranking Score\n" +
-          `Found: ${rawHeader.join(" | ")}`
-        );
-      }
-
-      const data = [];
-      const seasons = new Set();
-
-      for (let i = 1; i < grid.length; i++) {
-        const r = grid[i];
-
-        const season = idx.season !== -1 ? String(r[idx.season] ?? "").trim() : "1";
-        const pos = Number(String(r[idx.pos] ?? "").trim());
-        const player = String(r[idx.player] ?? "").trim();
-
-        if (!player || !pos) continue;
-
-        const wins = String(r[idx.wins] ?? "").trim();
-        const bonus = String(r[idx.bonus] ?? "").trim();
-        const sevenb = idx.sevenb !== -1 ? String(r[idx.sevenb] ?? "").trim() : "0";
-        const score = String(r[idx.score] ?? "").trim();
-
-        seasons.add(season);
-        data.push({ season, pos, player, wins, bonus, sevenb, score });
-      }
-
-      // populate seasons
-      const seasonList = [...seasons].map(Number).sort((a, b) => a - b).map(String);
-      // clear existing except "All Seasons"
-      while (seasonSelect.options.length > 1) seasonSelect.remove(1);
-      seasonList.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s;
-        opt.textContent = `Season ${s}`;
-        seasonSelect.appendChild(opt);
+      data.push({
+        season,
+        pos: Number(pos),
+        player,
+        wins: Number(cols[idx.wins] || 0),
+        bonus: Number(cols[idx.bonus] || 0),
+        seven: Number(cols[idx.seven] || 0),
+        score: Number(cols[idx.score] || 0)
       });
+    });
 
-      // default = latest season if available
-      const defaultSeason = seasonList.length ? seasonList[seasonList.length - 1] : "all";
-      seasonSelect.value = defaultSeason;
+    const seasons = [...seasonsSet].map(Number).sort((a, b) => a - b).map(String);
+    if (seasons.length === 0) throw new Error("No seasons found in ranking.csv.");
 
-      function render() {
-        const selected = seasonSelect.value;
-        const filtered = data
-          .filter(d => selected === "all" || d.season === selected)
-          .sort((a, b) => a.pos - b.pos);
+    // Populate season dropdown
+    seasonSelect.innerHTML = "";
+    seasons.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = `Season ${s}`;
+      seasonSelect.appendChild(opt);
+    });
 
-        tbody.innerHTML = "";
-        seasonBadge.textContent = selected === "all" ? "Season: All" : `Season: ${selected}`;
-        rowCountBadge.textContent = `Players: ${filtered.length}`;
+    // Default season = latest
+    const defaultSeason = seasons[seasons.length - 1];
+    seasonSelect.value = defaultSeason;
 
-        filtered.forEach((d, i) => {
-          const tr = document.createElement("tr");
-          const cls = classForPos(d.pos, filtered.length);
+    function posBadgeClass(pos, total) {
+      if (pos <= 3) return "pos topGlow";          // top 3 glow
+      if (pos >= total - 1) return "pos bottomDanger"; // bottom 2 red (if total>=2)
+      return "pos neutral";                         // rest muted
+    }
 
-          tr.innerHTML = `
-            <td><span class="${cls}">${d.pos}</span></td>
-            <td style="text-align:left;"><strong>${d.player}</strong></td>
-            <td>${d.wins}</td>
-            <td>${d.bonus}</td>
-            <td>${d.sevenb}</td>
-            <td><strong>${d.score}</strong></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
+    function render(season) {
+      tbody.innerHTML = "";
 
-      render();
-      seasonSelect.addEventListener("change", render);
+      const seasonRows = data
+        .filter(r => r.season === season)
+        .sort((a, b) => a.pos - b.pos);
 
-    } catch (err) {
+      seasonBadge.textContent = `Season: ${season}`;
+      meta.textContent = `Players: ${seasonRows.length}`;
+
+      const total = seasonRows.length;
+
+      seasonRows.forEach(r => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td><span class="${posBadgeClass(r.pos, total)}">${r.pos}</span></td>
+          <td class="left"><span class="name">${r.player}</span></td>
+          <td>${r.wins}</td>
+          <td>${r.bonus}</td>
+          <td>${r.seven}</td>
+          <td><span class="score">${r.score}</span></td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    render(defaultSeason);
+
+    seasonSelect.addEventListener("change", e => {
+      render(e.target.value);
+    });
+  })
+  .catch(err => {
+    const box = document.getElementById("errBox");
+    const msg = document.getElementById("errMsg");
+    if (box && msg) {
+      box.style.display = "block";
+      msg.textContent = err.message || String(err);
+    } else {
       console.error(err);
-      showError(err.message || "Unknown error", String(err.stack || ""));
     }
   });
-})();
