@@ -242,3 +242,77 @@ body{
   .controls{ flex-wrap:wrap; }
   .table{ font-size: 12px; }
 }
+
+/* add to css/style.css if missing */
+.errorBox{
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,100,100,.35);
+  background: rgba(255,80,80,.12);
+  color: rgba(255,235,235,.95);
+}
+
+.card{
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(10,16,24,.55);
+  border: 1px solid rgba(255,255,255,.06);
+  backdrop-filter: blur(10px);
+}
+
+.tableWrap{ overflow:auto; border-radius: 14px; }
+
+.tbl{
+  width:100%;
+  border-collapse: collapse;
+}
+.tbl thead th{
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: rgba(170,190,220,.85);
+  padding: 14px 14px;
+  text-align: center;
+}
+.tbl tbody td{
+  padding: 14px 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  color: rgba(235,245,255,.92);
+}
+.tbl tbody tr:hover{
+  background: rgba(255,255,255,.03);
+}
+
+.pos{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 46px;
+  height: 32px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+.pos.neutral{
+  background: rgba(255,255,255,.06);
+  color: rgba(225,235,255,.9);
+}
+
+.pos.bottomDanger{
+  background: rgba(255,70,90,.14);
+  color: rgba(255,120,130,.95);
+  border: 1px solid rgba(255,70,90,.35);
+}
+
+.pos.topGlow{
+  background: rgba(0,255,185,.12);
+  color: rgba(150,255,230,.98);
+  border: 1px solid rgba(0,255,185,.35);
+  box-shadow: 0 0 18px rgba(0,255,185,.22);
+  animation: glowPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes glowPulse{
+  0%,100%{ box-shadow: 0 0 18px rgba(0,255,185,.18); }
+  50%{ box-shadow: 0 0 28px rgba(0,255,185,.34); }
+}
