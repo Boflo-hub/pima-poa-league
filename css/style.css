@@ -242,8 +242,10 @@ body{
   .controls{ flex-wrap:wrap; }
   .table{ font-size: 12px; }
 }
+/* ================================
+   RANKING TABLE ADDITIONS
+   ================================ */
 
-/* add to css/style.css if missing */
 .errorBox{
   margin: 14px 0;
   padding: 14px 16px;
@@ -261,12 +263,16 @@ body{
   backdrop-filter: blur(10px);
 }
 
-.tableWrap{ overflow:auto; border-radius: 14px; }
+.tableWrap{
+  overflow:auto;
+  border-radius: 14px;
+}
 
 .tbl{
   width:100%;
   border-collapse: collapse;
 }
+
 .tbl thead th{
   font-size: 12px;
   letter-spacing: .12em;
@@ -274,11 +280,13 @@ body{
   padding: 14px 14px;
   text-align: center;
 }
+
 .tbl tbody td{
   padding: 14px 14px;
   border-top: 1px solid rgba(255,255,255,.06);
   color: rgba(235,245,255,.92);
 }
+
 .tbl tbody tr:hover{
   background: rgba(255,255,255,.03);
 }
@@ -310,6 +318,15 @@ body{
   border: 1px solid rgba(0,255,185,.35);
   box-shadow: 0 0 18px rgba(0,255,185,.22);
   animation: glowPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes glowPulse{
+  0%,100%{
+    box-shadow: 0 0 18px rgba(0,255,185,.18);
+  }
+  50%{
+    box-shadow: 0 0 28px rgba(0,255,185,.34);
+  }
 }
 
 @keyframes glowPulse{
