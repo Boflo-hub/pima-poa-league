@@ -1,237 +1,249 @@
+// js/fixtures.js
 (() => {
-  const CSV_PATH = "data/fixtures.csv";
+  const CSV_URL = "data/fixtures.csv"; // must exist exactly as /data/fixtures.csv (case-sensitive)
 
-  const $ = (id) => document.getElementById(id);
+  // ---------- helpers ----------
+  function $(id) { return document.getElementById(id); }
 
-  const roundSelect = $("roundFilter");
-  const badge = $("currentRoundBadge");
-  const summaryBadge = $("roundSummaryBadge");
-  const pendingBtn = $("pendingToggle");
-  const currentBtn = $("currentRoundToggle");
-
-  const pendingBody = $("pendingBody");
-  const playedBody = $("playedBody");
-
-  const errorBox = $("errorBox");
-  const errorMsg = $("errorMsg");
-
-  function showError(message) {
-    console.error(message);
-    if (errorMsg) errorMsg.textContent = message;
-    if (errorBox) errorBox.style.display = "block";
-  }
-
-  // Guard: required elements
-  const required = [
-    ["roundFilter", roundSelect],
-    ["currentRoundBadge", badge],
-    ["roundSummaryBadge", summaryBadge],
-    ["pendingToggle", pendingBtn],
-    ["currentRoundToggle", currentBtn],
-    ["pendingBody", pendingBody],
-    ["playedBody", playedBody],
-    ["errorBox", errorBox],
-    ["errorMsg", errorMsg]
-  ];
-  const missing = required.filter(([, el]) => !el).map(([id]) => id);
-  if (missing.length) {
-    showError("Missing element(s) in fixtures.html: " + missing.join(", "));
-    return;
-  }
-
-  function parseCSVLine(line) {
-    const out = [];
+  // basic CSV parser that handles quoted commas
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
     let cur = "";
     let inQuotes = false;
 
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
 
-      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; continue; }
+      if (ch === '"' && inQuotes && next === '"') {
+        cur += '"'; i++; continue; // escaped quote
+      }
       if (ch === '"') { inQuotes = !inQuotes; continue; }
 
-      if (ch === "," && !inQuotes) {
-        out.push(cur.trim());
+      if (!inQuotes && (ch === "\n" || ch === "\r")) {
+        if (cur.length || row.length) {
+          row.push(cur);
+          rows.push(row.map(v => (v ?? "").trim()));
+          row = [];
+          cur = "";
+        }
+        continue;
+      }
+
+      if (!inQuotes && ch === ",") {
+        row.push(cur);
         cur = "";
         continue;
       }
+
       cur += ch;
     }
-    out.push(cur.trim());
-    return out;
+
+    if (cur.length || row.length) {
+      row.push(cur);
+      rows.push(row.map(v => (v ?? "").trim()));
+    }
+
+    // remove empty trailing rows
+    return rows.filter(r => r.some(c => String(c).trim() !== ""));
   }
 
-  function normalizeHeader(h) {
-    return (h || "")
-      .trim()
+  function normHeader(h) {
+    // "Player A" -> "playera", "Played?" -> "played"
+    return String(h || "")
       .toLowerCase()
-      .replace(/\s+/g, "");
+      .replace(/[^a-z0-9]/g, "");
   }
 
-  function statusPill(played) {
+  function makeStatusPill(played) {
     return played
       ? `<span class="status played"><span class="dot"></span>Played</span>`
       : `<span class="status pending"><span class="dot"></span>Pending</span>`;
   }
 
-  fetch(CSV_PATH, { cache: "no-store" })
-    .then((res) => {
-      if (!res.ok) throw new Error(`CSV fetch failed (${res.status}). Check: ${CSV_PATH}`);
-      return res.text();
-    })
-    .then((csvText) => {
-      const clean = csvText.replace(/\r/g, "").trim();
-      if (!clean) throw new Error("fixtures.csv is empty.");
+  function showError(msg, detail = "") {
+    const box = $("errorBox");
+    if (!box) return;
+    box.style.display = "block";
+    box.innerHTML = `
+      <div style="font-weight:800;margin-bottom:4px;">Couldn't load fixtures</div>
+      <div style="opacity:.9">${msg}</div>
+      ${detail ? `<div style="opacity:.7;margin-top:6px;font-size:12px;white-space:pre-wrap">${detail}</div>` : ""}
+    `;
+  }
 
-      const lines = clean.split("\n").filter(Boolean);
-      if (lines.length < 2) throw new Error("fixtures.csv has no data rows.");
+  // ---------- main ----------
+  document.addEventListener("DOMContentLoaded", async () => {
+    // required elements (must exist in fixtures.html)
+    const pendingBody = $("pendingBody");
+    const playedBody  = $("playedBody");
+    const roundFilter = $("roundFilter");
+    const badgeRound  = $("currentRoundBadge");
+    const badgeCount  = $("playedCountBadge");
+    const pendingOnlyBtn = $("pendingOnlyBtn");
+    const currentRoundBtn = $("currentRoundBtn");
 
-      const headerRaw = parseCSVLine(lines[0]);
-      const header = headerRaw.map(normalizeHeader);
+    if (!pendingBody || !playedBody || !roundFilter || !badgeRound || !badgeCount) {
+      showError("Missing required table elements in fixtures.html (tbody IDs).");
+      return;
+    }
 
-      const colIndex = (names) => {
-        for (const n of names) {
-          const idx = header.indexOf(normalizeHeader(n));
-          if (idx !== -1) return idx;
-        }
-        return -1;
-      };
+    let pendingOnly = false;
+    let currentRoundOnly = false;
 
+    try {
+      // cache-bust so GitHub Pages updates immediately
+      const res = await fetch(`${CSV_URL}?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+
+      const text = await res.text();
+      const grid = parseCSV(text);
+
+      if (grid.length < 2) throw new Error("CSV has no data rows.");
+
+      const rawHeader = grid[0];
+      const header = rawHeader.map(normHeader);
+
+      // map headers flexibly (supports your format: Round,Player A,Player B,Played?,Winner)
       const idx = {
-        round: colIndex(["Round"]),
-        a: colIndex(["PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "PlayerA", "Player A"]),
-        b: colIndex(["PlayerB", "Player B"]),
-        played: colIndex(["Played?", "Played"]),
-        winner: colIndex(["Winner"])
+        season: header.indexOf("season"),
+        round: header.indexOf("round"),
+        a: header.indexOf("playera"),
+        b: header.indexOf("playerb"),
+        played: header.indexOf("played"),
+        winner: header.indexOf("winner"),
+        scorea: header.indexOf("scorea"),
+        scoreb: header.indexOf("scoreb"),
       };
 
-      const missingCols = Object.entries(idx).filter(([, v]) => v === -1).map(([k]) => k);
-      if (missingCols.length) {
+      if (idx.round === -1 || idx.a === -1 || idx.b === -1) {
         throw new Error(
-          `CSV is missing column(s): ${missingCols.join(", ")}. Expected: Round, Player A, Player B, Played?, Winner`
+          "CSV headers not recognized. Need at least: Round, Player A, Player B.\n" +
+          `Found headers: ${rawHeader.join(" | ")}`
         );
       }
 
       const fixtures = [];
       const roundsSet = new Set();
 
-      for (const line of lines.slice(1)) {
-        const cols = parseCSVLine(line);
-
-        const round = (cols[idx.round] || "").trim();
-        const a = (cols[idx.a] || "").trim();
-        const b = (cols[idx.b] || "").trim();
-        const playedVal = (cols[idx.played] || "").trim().toUpperCase();
-        const winner = (cols[idx.winner] || "").trim();
-
+      for (let i = 1; i < grid.length; i++) {
+        const r = grid[i];
+        const round = (r[idx.round] ?? "").trim();
+        const a = (r[idx.a] ?? "").trim();
+        const b = (r[idx.b] ?? "").trim();
         if (!round || !a || !b) continue;
 
-        const played = ["YES", "Y", "TRUE", "1"].includes(playedVal);
-        roundsSet.add(round);
+        const playedStr = idx.played !== -1 ? String(r[idx.played] ?? "").trim() : "";
+        const winner = idx.winner !== -1 ? String(r[idx.winner] ?? "").trim() : "";
 
-        fixtures.push({ round, a, b, played, winner });
+        const sa = idx.scorea !== -1 ? String(r[idx.scorea] ?? "").trim() : "";
+        const sb = idx.scoreb !== -1 ? String(r[idx.scoreb] ?? "").trim() : "";
+
+        const played =
+          (playedStr && /^(yes|y|played|true|1)$/i.test(playedStr)) ||
+          (!!sa && !!sb) ||
+          (!!winner && winner.length > 0);
+
+        roundsSet.add(round);
+        fixtures.push({ round, a, b, played, winner, sa, sb });
       }
 
-      if (!fixtures.length) throw new Error("No valid fixtures rows found in fixtures.csv.");
+      const rounds = [...roundsSet].map(Number).sort((x, y) => x - y).map(String);
 
-      const rounds = Array.from(roundsSet).sort((x, y) => Number(x) - Number(y));
-
-      // Current round = first round that still has any pending
+      // determine "current round" = first round with any pending match
       let currentRound = rounds[0] || "1";
       for (const r of rounds) {
-        const hasPending = fixtures.some((f) => f.round === r && !f.played);
+        const hasPending = fixtures.some(f => f.round === r && !f.played);
         if (hasPending) { currentRound = r; break; }
       }
+      badgeRound.textContent = `Current Round: ${currentRound}`;
 
-      badge.textContent = `Current Round:${currentRound}`;
-
-      // Populate dropdown
-      while (roundSelect.options.length > 1) roundSelect.remove(1);
-      rounds.forEach((r) => {
+      // dropdown
+      // clear existing except first "All Rounds"
+      while (roundFilter.options.length > 1) roundFilter.remove(1);
+      rounds.forEach(r => {
         const opt = document.createElement("option");
         opt.value = r;
         opt.textContent = `Round ${r}`;
-        roundSelect.appendChild(opt);
+        roundFilter.appendChild(opt);
       });
 
-      let pendingOnly = false;
-      let currentOnly = true;
-
-      // default: current round
-      roundSelect.value = currentRound;
-      roundSelect.disabled = currentOnly;
-
-      function roundStats(round) {
-        const list = fixtures.filter(f => round === "all" || f.round === round);
-        const total = list.length;
-        const played = list.filter(f => f.played).length;
-        return { total, played };
-      }
-
       function render() {
-        const chosenRound = roundSelect.value || "all";
-        const activeRound = currentOnly ? currentRound : chosenRound;
-
-        const stats = roundStats(activeRound);
-        summaryBadge.textContent = `Played: ${stats.played} / ${stats.total}`;
-
+        const filterRound = roundFilter.value; // "all" or number as string
         pendingBody.innerHTML = "";
         playedBody.innerHTML = "";
 
-        const filtered = fixtures
-          .filter(f => activeRound === "all" || f.round === activeRound)
-          .filter(f => !pendingOnly || !f.played);
+        const filtered = fixtures.filter(f => {
+          if (currentRoundOnly && f.round !== currentRound) return false;
+          if (filterRound !== "all" && f.round !== filterRound) return false;
+          if (pendingOnly && f.played) return false;
+          return true;
+        });
 
         const pending = filtered.filter(f => !f.played);
         const played = filtered.filter(f => f.played);
 
+        // counts across ALL fixtures (not just filtered) for the badge
+        const playedCountAll = fixtures.filter(f => f.played).length;
+        badgeCount.textContent = `Played: ${playedCountAll}/${fixtures.length}`;
+
+        // pending table
         pending.forEach(f => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>Round ${f.round}</td>
-            <td><strong>${f.a}</strong></td>
+            <td>R${f.round}</td>
+            <td style="text-align:left;padding-left:12px;"><strong>${f.a}</strong></td>
             <td>vs</td>
-            <td><strong>${f.b}</strong></td>
-            <td>${statusPill(false)}</td>
+            <td style="text-align:left;padding-left:12px;"><strong>${f.b}</strong></td>
+            <td>${makeStatusPill(false)}</td>
           `;
           pendingBody.appendChild(tr);
         });
 
+        // played table
         played.forEach(f => {
           const tr = document.createElement("tr");
-          const result = f.winner ? `WIN: ${f.winner}` : "Played";
+          const result =
+            (f.sa && f.sb) ? `${f.sa} - ${f.sb}` :
+            (f.winner ? `Winner: ${f.winner}` : "Played");
+
           tr.innerHTML = `
-            <td>Round ${f.round}</td>
-            <td><strong>${f.a}</strong></td>
+            <td>R${f.round}</td>
+            <td style="text-align:left;padding-left:12px;"><strong>${f.a}</strong></td>
             <td>${result}</td>
-            <td><strong>${f.b}</strong></td>
-            <td>${statusPill(true)}</td>
+            <td style="text-align:left;padding-left:12px;"><strong>${f.b}</strong></td>
+            <td>${makeStatusPill(true)}</td>
           `;
           playedBody.appendChild(tr);
         });
       }
 
+      // default view
+      roundFilter.value = currentRound;
       render();
 
-      roundSelect.addEventListener("change", render);
+      roundFilter.addEventListener("change", render);
 
-      pendingBtn.addEventListener("click", () => {
-        pendingOnly = !pendingOnly;
-        pendingBtn.classList.toggle("active", pendingOnly);
-        pendingBtn.textContent = pendingOnly ? "Showing Pending Only" : "Show Pending Only";
-        render();
-      });
+      if (pendingOnlyBtn) {
+        pendingOnlyBtn.addEventListener("click", () => {
+          pendingOnly = !pendingOnly;
+          pendingOnlyBtn.classList.toggle("active", pendingOnly);
+          render();
+        });
+      }
 
-      currentBtn.addEventListener("click", () => {
-        currentOnly = !currentOnly;
-        currentBtn.classList.toggle("active", currentOnly);
-        currentBtn.textContent = currentOnly ? "Current Round Only" : "All Rounds Mode";
+      if (currentRoundBtn) {
+        currentRoundBtn.addEventListener("click", () => {
+          currentRoundOnly = !currentRoundOnly;
+          currentRoundBtn.classList.toggle("active", currentRoundOnly);
+          render();
+        });
+      }
 
-        roundSelect.disabled = currentOnly;
-        if (currentOnly) roundSelect.value = currentRound;
-
-        render();
-      });
-    })
-    .catch((err) => showError(err.message));
+    } catch (err) {
+      console.error(err);
+      showError(err.message || "Unknown error", String(err.stack || ""));
+    }
+  });
 })();
