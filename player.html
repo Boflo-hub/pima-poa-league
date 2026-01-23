@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pima Poa League — Player Profile</title>
+
+  <!-- Sporty font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Site CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Small page-specific polish (safe even if style.css changes) -->
+  <style>
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 18px 60px; }
+    .grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; }
+    @media (max-width: 980px){ .grid2{ grid-template-columns:1fr; } }
+
+    .panel { background: rgba(8,14,22,.55); border: 1px solid rgba(255,255,255,.06); border-radius: 18px; overflow:hidden; }
+    .panel-hd { padding: 14px 16px; display:flex; align-items:baseline; justify-content:space-between; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .panel-hd h2 { margin:0; font-size: 22px; letter-spacing:.3px; }
+    .panel-hd .muted { opacity:.75; font-size: 13px; }
+
+    .cards { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 16px 18px; }
+    @media (max-width: 980px){ .cards{ grid-template-columns: repeat(2, 1fr);} }
+    .card { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 12px 12px; }
+    .card .k { font-size: 12px; opacity:.75; letter-spacing:.12em; text-transform:uppercase; }
+    .card .v { margin-top:6px; font-size: 26px; font-weight: 700; }
+
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; padding: 14px 16px 18px; }
+    @media (max-width: 720px){ .split{ grid-template-columns:1fr; } }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    th { text-align:left; font-size: 12px; letter-spacing:.12em; text-transform:uppercase; opacity:.75; }
+    td { font-size: 15px; }
+    .right { text-align:right; }
+    .pill { display:inline-flex; gap:8px; align-items:center; padding: 6px 10px; border-radius:999px; border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.05); font-size: 13px; }
+    .dot { width: 8px; height: 8px; border-radius:999px; background: #34d399; box-shadow: 0 0 12px rgba(52,211,153,.55); }
+    .dot.red { background:#fb7185; box-shadow: 0 0 12px rgba(251,113,133,.55); }
+    .dot.amber { background:#fbbf24; box-shadow: 0 0 12px rgba(251,191,36,.55); }
+
+    .form { display:flex; gap:6px; flex-wrap:wrap; }
+    .chip { width: 30px; height: 30px; display:grid; place-items:center; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.05); font-weight:700; }
+    .chip.w { background: rgba(52,211,153,.14); border-color: rgba(52,211,153,.25); }
+    .chip.l { background: rgba(251,113,133,.14); border-color: rgba(251,113,133,.25); }
+    .chip.p { background: rgba(251,191,36,.12); border-color: rgba(251,191,36,.25); }
+
+    .err { margin: 12px 0; padding: 12px 14px; border-radius: 14px;
+           border: 1px solid rgba(255,255,255,.10); background: rgba(250, 80, 80, .12); }
+  </style>
+</head>
+
+<body>
+  <!-- Header / Nav (cohesive with other pages) -->
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Pima Poa League</h1>
+        <p class="sub">Player Profile</p>
+      </div>
+    </div>
+
+    <nav class="navlinks">
+      <a class="navbtn" href="./index.html">League</a>
+      <a class="navbtn" href="./fixtures.html">Fixtures</a>
+      <a class="navbtn" href="./ranking.html">Ranking</a>
+      <a class="navbtn active" href="./player.html">Player</a>
+    </nav>
+
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect"></select>
+      <select id="playerSelect"></select>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="errorBox" class="err" style="display:none;"></div>
+
+    <section class="grid2">
+      <!-- LEFT: Stats + matches -->
+      <div class="panel">
+        <div class="panel-hd">
+          <h2 id="playerTitle">Player</h2>
+          <span class="muted" id="playerMeta">—</span>
+        </div>
+
+        <div class="cards">
+          <div class="card"><div class="k">Matches</div><div class="v" id="statMatches">—</div></div>
+          <div class="card"><div class="k">Wins</div><div class="v" id="statWins">—</div></div>
+          <div class="card"><div class="k">Losses</div><div class="v" id="statLosses">—</div></div>
+          <div class="card"><div class="k">Win Rate</div><div class="v" id="statWinRate">—</div></div>
+        </div>
+
+        <div class="split">
+          <div class="panel" style="background:transparent; border:none;">
+            <div class="panel-hd" style="padding:0 0 10px 0; border:none;">
+              <h2 style="font-size:18px;">Form</h2>
+              <span class="muted">last 10</span>
+            </div>
+            <div class="form" id="formRow"></div>
+          </div>
+
+          <div class="panel" style="background:transparent; border:none;">
+            <div class="panel-hd" style="padding:0 0 10px 0; border:none;">
+              <h2 style="font-size:18px;">Season totals</h2>
+              <span class="muted">from tables</span>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <span class="pill"><span class="dot"></span>PTS: <strong id="pillPTS">—</strong></span>
+              <span class="pill"><span class="dot"></span>BD: <strong id="pillBD">—</strong></span>
+              <span class="pill"><span class="dot"></span>7B: <strong id="pill7B">—</strong></span>
+              <span class="pill"><span class="dot"></span>BP: <strong id="pillBP">—</strong></span>
+              <span class="pill"><span class="dot"></span>Rank Score: <strong id="pillScore">—</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-hd">
+          <h2>Recent matches</h2>
+          <span class="muted">from fixtures.csv</span>
+        </div>
+        <div style="padding: 0 16px 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Opponent</th>
+                <th>Result</th>
+                <th class="right">Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Head-to-head -->
+      <div class="panel">
+        <div class="panel-hd">
+          <h2>Head-to-Head</h2>
+          <span class="muted">same season</span>
+        </div>
+
+        <div style="padding: 14px 16px 18px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <select id="h2hOpponent"></select>
+            <button id="h2hSwap" class="navbtn" type="button">Swap</button>
+            <button id="h2hClear" class="navbtn" type="button">Clear</button>
+          </div>
+
+          <div class="cards" style="grid-template-columns: repeat(2, 1fr); margin-top:12px;">
+            <div class="card"><div class="k">Matches</div><div class="v" id="h2hMatches">—</div></div>
+            <div class="card"><div class="k">Played</div><div class="v" id="h2hPlayed">—</div></div>
+            <div class="card"><div class="k">P1 Wins</div><div class="v" id="h2hP1Wins">—</div></div>
+            <div class="card"><div class="k">P2 Wins</div><div class="v" id="h2hP2Wins">—</div></div>
+          </div>
+
+          <div class="panel-hd" style="margin-top:10px;">
+            <h2 style="font-size:18px;">H2H matches</h2>
+            <span class="muted">latest first</span>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Rd</th>
+                <th>Match</th>
+                <th class="right">Status</th>
+              </tr>
+            </thead>
+            <tbody id="h2hBody"></tbody>
+          </table>
+
+          <p class="footer" style="margin-top:14px;">Auto-updated from data/fixtures.csv</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/player.js"></script>
+</body>
+</html>
