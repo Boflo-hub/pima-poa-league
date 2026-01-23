@@ -13,24 +13,30 @@
 </head>
 
 <body>
-  <header class="top">
-    <div class="brand">
-      <div class="logo">8</div>
-      <div>
-        <h1>Ranking Table</h1>
-        <p class="sub">Pima Poa Pool League</p>
+  <main class="wrap">
+
+    <!-- TOPBAR + NAV + SEASON -->
+    <div class="topbar">
+      <div class="brandline">
+        <div class="brandDot">8</div>
+        <div class="brandText">
+          <h1>Ranking Table</h1>
+          <p>Pima Poa Pool League</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="index.html">League</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a class="active" href="ranking.html">Ranking</a>
+      </nav>
+
+      <div class="seasonControls">
+        <div id="seasonBadge" class="chip">Season: —</div>
+        <select id="seasonSelect" class="select"></select>
       </div>
     </div>
 
-    <div class="controls">
-      <div id="seasonBadge" class="badge">Season: —</div>
-      <select id="seasonSelect" class="select">
-        <option value="" disabled selected>Loading…</option>
-      </select>
-    </div>
-  </header>
-
-  <main class="wrap">
     <div id="errBox" class="err" style="display:none;">
       <div class="errTitle">Couldn't load ranking table</div>
       <div id="errMsg" class="errMsg"></div>
@@ -42,45 +48,6 @@
         <div id="meta" class="metaChip">Players: —</div>
       </div>
 
-      <!-- ✅ INSIGHTS -->
-      <div class="insights" id="insights">
-        <div class="insight">
-          <div class="k">Score Leader</div>
-          <div class="v" id="iLeader">—</div>
-          <div class="s" id="iLeaderSub">—</div>
-        </div>
-
-        <div class="insight">
-          <div class="k">Most Wins</div>
-          <div class="v" id="iWins">—</div>
-          <div class="s" id="iWinsSub">—</div>
-        </div>
-
-        <div class="insight">
-          <div class="k">Most Bonus</div>
-          <div class="v" id="iBonus">—</div>
-          <div class="s" id="iBonusSub">—</div>
-        </div>
-
-        <div class="insight">
-          <div class="k">Most 7-Ballers</div>
-          <div class="v" id="i7b">—</div>
-          <div class="s" id="i7bSub">—</div>
-        </div>
-
-        <div class="insight">
-          <div class="k">Best Efficiency</div>
-          <div class="v" id="iEff">—</div>
-          <div class="s" id="iEffSub">—</div>
-        </div>
-
-        <div class="insight">
-          <div class="k">Top-3 Spread</div>
-          <div class="v" id="iSpread">—</div>
-          <div class="s" id="iSpreadSub">—</div>
-        </div>
-      </div>
-
       <div class="tableWrap compact">
         <table class="tbl stats" id="rankingTable">
           <thead>
@@ -90,7 +57,7 @@
               <th style="width:70px;">W</th>
               <th style="width:90px;">BONUS</th>
               <th style="width:70px;">7B</th>
-              <th style="width:90px;">SCORE</th>
+              <th style="width:110px;">SCORE</th>
             </tr>
           </thead>
           <tbody id="rankingBody"></tbody>
@@ -99,6 +66,7 @@
 
       <p class="footer">Auto-updated from <code>data/ranking.csv</code></p>
     </section>
+
   </main>
 
   <script src="js/ranking.js"></script>
