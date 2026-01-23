@@ -1,120 +1,198 @@
-// js/ranking.js — Season switcher for data/ranking.csv
+(() => {
+  const CSV_PATH = "data/ranking.csv";
 
-fetch("data/ranking.csv", { cache: "no-store" })
-  .then(res => {
-    if (!res.ok) throw new Error(`HTTP ${res.status} while loading ranking.csv`);
-    return res.text();
-  })
-  .then(csv => init(csv))
-  .catch(err => showError(err));
-
-function showError(err) {
-  const box = document.getElementById("errBox");
-  const msg = document.getElementById("errMsg");
-  if (box && msg) {
-    box.style.display = "block";
-    msg.textContent = err.message || String(err);
-  } else {
-    console.error(err);
-  }
-}
-
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const header = lines[0].split(",").map(h => h.trim());
-  const rows = lines.slice(1).map(line => line.split(",").map(x => (x ?? "").trim()));
-  return { header, rows };
-}
-
-function init(csv) {
-  const { header, rows } = parseCSV(csv);
-
-  const idx = {
-    season: header.indexOf("Season"),
-    pos: header.indexOf("Position"),
-    player: header.indexOf("Player"),
-    wins: header.indexOf("Wins"),
-    bonus: header.indexOf("Bonus"),
-    seven: header.indexOf("7-Baller"),
-    score: header.indexOf("Ranking Score")
-  };
-
-  for (const [k, v] of Object.entries(idx)) {
-    if (v === -1) throw new Error(`Missing column in ranking.csv: ${k}`);
-  }
-
-  const tbody = document.getElementById("rankingBody");
   const seasonSelect = document.getElementById("seasonSelect");
   const seasonBadge = document.getElementById("seasonBadge");
-  const meta = document.getElementById("meta");
+  const rankingBody = document.getElementById("rankingBody");
+  const rankingError = document.getElementById("rankingError");
+  const rankMeta = document.getElementById("rankMeta");
 
-  const all = [];
-  const seasonsSet = new Set();
+  const insightsMeta = document.getElementById("insightsMeta");
+  const statTop = document.getElementById("statTop");
+  const statTopSub = document.getElementById("statTopSub");
+  const statWins = document.getElementById("statWins");
+  const statWinsSub = document.getElementById("statWinsSub");
+  const statBonus = document.getElementById("statBonus");
+  const statBonusSub = document.getElementById("statBonusSub");
+  const stat7b = document.getElementById("stat7b");
+  const stat7bSub = document.getElementById("stat7bSub");
 
-  rows.forEach(cols => {
-    const season = cols[idx.season];
-    const pos = cols[idx.pos];
-    const player = cols[idx.player];
-    if (!season || !pos || !player) return;
-
-    seasonsSet.add(season);
-
-    all.push({
-      season,
-      pos: Number(pos),
-      player,
-      wins: Number(cols[idx.wins] || 0),
-      bonus: Number(cols[idx.bonus] || 0),
-      seven: Number(cols[idx.seven] || 0),
-      score: Number(cols[idx.score] || 0),
-    });
-  });
-
-  const seasons = [...seasonsSet].map(Number).sort((a,b)=>a-b).map(String);
-  seasonSelect.innerHTML = "";
-  seasons.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = `Season ${s}`;
-    seasonSelect.appendChild(opt);
-  });
-
-  // default = Season 1 if present
-  const defaultSeason = seasons.includes("1") ? "1" : (seasons[0] || "1");
-  seasonSelect.value = defaultSeason;
-
-  function posBadgeClass(pos, total) {
-    if (pos <= 3) return "pos topGlow";
-    if (total >= 2 && pos >= total - 1) return "pos bottomDanger";
-    return "pos neutral";
+  function showError(msg) {
+    rankingError.style.display = "block";
+    rankingError.textContent = msg;
+  }
+  function hideError() {
+    rankingError.style.display = "none";
+    rankingError.textContent = "";
   }
 
-  function render(season) {
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let cur = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+
+      if (ch === '"' && next === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+
+      if (!inQuotes && ch === ",") {
+        row.push(cur.trim());
+        cur = "";
+        continue;
+      }
+
+      if (!inQuotes && (ch === "\n" || ch === "\r")) {
+        if (ch === "\r" && next === "\n") i++;
+        row.push(cur.trim());
+        cur = "";
+        if (row.some(v => v !== "")) rows.push(row);
+        row = [];
+        continue;
+      }
+
+      cur += ch;
+    }
+
+    row.push(cur.trim());
+    if (row.some(v => v !== "")) rows.push(row);
+    return rows;
+  }
+
+  function makeIndex(header) {
+    const norm = (s) => String(s || "").trim().toLowerCase();
+    const idx = {};
+    header.forEach((h, i) => { idx[norm(h)] = i; });
+    return idx;
+  }
+
+  function rowToObj(cols, idx) {
+    const get = (k) => {
+      const i = idx[k];
+      return i === undefined ? "" : (cols[i] ?? "");
+    };
+
+    return {
+      Season: get("season"),
+      Position: get("position") || get("pos"),
+      Player: get("player"),
+      Wins: get("wins") || get("w"),
+      Bonus: get("bonus"),
+      SevenB: get("7-baller") || get("7-baller ") || get("7b") || get("7-ballers"),
+      Score: get("ranking score") || get("score")
+    };
+  }
+
+  function getSeasons(rows) {
+    const set = new Set(rows.map(r => String(r.Season)));
+    return [...set].map(Number).sort((a, b) => a - b).map(String);
+  }
+
+  function pillClass(pos, total) {
+    const p = Number(pos);
+    if (!Number.isFinite(p)) return "pill";
+    if (p <= 3) return "pill pill-top";      // top 3 highlight
+    if (p >= total) return "pill pill-bot";  // last highlight (optional)
+    return "pill";
+  }
+
+  function maxBy(rows, key) {
+    let best = null;
+    let bestVal = -Infinity;
+    rows.forEach(r => {
+      const v = Number(r[key]);
+      if (Number.isFinite(v) && v > bestVal) {
+        bestVal = v;
+        best = r;
+      }
+    });
+    return best;
+  }
+
+  function render(season, allRows) {
+    const rows = allRows
+      .filter(r => String(r.Season) === String(season))
+      .filter(r => r.Player && r.Position)
+      .sort((a, b) => Number(a.Position) - Number(b.Position));
+
     seasonBadge.textContent = `Season: ${season}`;
-    tbody.innerHTML = "";
+    rankMeta.textContent = rows.length ? `Players: ${rows.length}` : "—";
+    insightsMeta.textContent = rows.length ? `Based on Season ${season}` : "—";
 
-    const seasonRows = all
-      .filter(r => r.season === season)
-      .sort((a,b)=>a.pos-b.pos);
-
-    meta.textContent = `Players: ${seasonRows.length}`;
-
-    const total = seasonRows.length;
-
-    seasonRows.forEach(r => {
+    rankingBody.innerHTML = "";
+    rows.forEach(r => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><span class="${posBadgeClass(r.pos, total)}">${r.pos}</span></td>
-        <td class="left"><span class="name">${r.player}</span></td>
-        <td>${r.wins}</td>
-        <td>${r.bonus}</td>
-        <td>${r.seven}</td>
-        <td><span class="score">${r.score}</span></td>
+        <td class="col-pos"><span class="${pillClass(r.Position, rows.length)}">${r.Position}</span></td>
+        <td class="col-player"><strong>${r.Player}</strong></td>
+        <td class="col-num">${r.Wins}</td>
+        <td class="col-num">${r.Bonus}</td>
+        <td class="col-num">${r.SevenB}</td>
+        <td class="col-num"><strong>${r.Score}</strong></td>
       `;
-      tbody.appendChild(tr);
+      rankingBody.appendChild(tr);
     });
+
+    // Insights
+    const top = rows[0] || null;
+    if (top) {
+      statTop.textContent = top.Player;
+      statTopSub.textContent = `Score: ${top.Score} • Wins: ${top.Wins}`;
+    } else {
+      statTop.textContent = "—";
+      statTopSub.textContent = "—";
+    }
+
+    const mw = maxBy(rows, "Wins");
+    statWins.textContent = mw ? mw.Player : "—";
+    statWinsSub.textContent = mw ? `Wins: ${mw.Wins}` : "—";
+
+    const mb = maxBy(rows, "Bonus");
+    statBonus.textContent = mb ? mb.Player : "—";
+    statBonusSub.textContent = mb ? `Bonus: ${mb.Bonus}` : "—";
+
+    const m7 = maxBy(rows, "SevenB");
+    stat7b.textContent = m7 ? m7.Player : "—";
+    stat7bSub.textContent = m7 ? `7-Ballers: ${m7.SevenB}` : "—";
   }
 
-  render(defaultSeason);
-  seasonSelect.addEventListener("change", e => render(e.target.value));
-}
+  function init() {
+    fetch(CSV_PATH, { cache: "no-store" })
+      .then(r => r.text())
+      .then(text => {
+        hideError();
+        const parsed = parseCSV(text.trim());
+        if (parsed.length < 2) throw new Error("ranking.csv has no data rows.");
+
+        const header = parsed[0];
+        const idx = makeIndex(header);
+        if (idx["season"] === undefined) throw new Error("Missing column: Season");
+
+        const allRows = parsed.slice(1).map(cols => rowToObj(cols, idx));
+        const seasons = getSeasons(allRows);
+        if (!seasons.length) throw new Error("No Season values found in ranking.csv");
+
+        seasonSelect.innerHTML = "";
+        seasons.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = `Season ${s}`;
+          seasonSelect.appendChild(opt);
+        });
+
+        const defaultSeason = seasons[seasons.length - 1];
+        seasonSelect.value = defaultSeason;
+        render(defaultSeason, allRows);
+
+        seasonSelect.addEventListener("change", (e) => {
+          render(e.target.value, allRows);
+        });
+      })
+      .catch(err => showError(`Couldn't load ranking table: ${err.message}`));
+  }
+
+  init();
+})();
