@@ -2,147 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pima Poa League – Fixtures</title>
+  <title>Pima Poa League — Fixtures</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <main class="wrap">
-
-    <!-- TOPBAR + NAV + SEASON -->
-    <div class="topbar">
-      <div class="brandline">
-        <div class="brandDot">8</div>
-        <div class="brandText">
-          <h1>Fixtures & Results</h1>
-          <p>Pima Poa Pool League</p>
-        </div>
-      </div>
-
-      <nav class="nav">
-        <a href="index.html">League</a>
-        <a class="active" href="fixtures.html">Fixtures</a>
-        <a href="ranking.html">Ranking</a>
-      </nav>
-
-      <div class="seasonControls">
-        <div id="seasonBadge" class="chip">Season: —</div>
-        <select id="seasonSelect" class="select"></select>
-        <div id="currentRoundBadge" class="chip">Current Round: —</div>
-        <div id="playedBadge" class="chip">Played: — / —</div>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Fixtures & Results</h1>
+        <p class="sub">Pima Poa Pool League</p>
       </div>
     </div>
 
-    <!-- ERROR -->
-    <div id="errBox" class="err" style="display:none;">
-      <div class="errTitle">Couldn't load fixtures</div>
-      <div id="errMsg" class="errMsg"></div>
-    </div>
+    <nav class="nav">
+      <a class="navlink" href="./index.html">League</a>
+      <a class="navlink active" href="./fixtures.html">Fixtures</a>
+      <a class="navlink" href="./ranking.html">Ranking</a>
+    </nav>
 
-    <!-- Controls -->
-    <div class="controls" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect" class="select"></select>
+
+      <div id="currentRoundBadge" class="badge">Current Round: —</div>
+      <div id="playedBadge" class="badge">Played: —</div>
+
       <select id="roundFilter" class="select">
         <option value="all">All Rounds</option>
       </select>
 
-      <button id="pendingOnlyBtn" class="btn ghost" type="button">Show Pending Only</button>
-      <button id="currentRoundOnlyBtn" class="btn ghost" type="button">Current Round Only</button>
+      <button id="pendingOnlyBtn" class="btn">Show Pending Only</button>
+      <button id="currentRoundOnlyBtn" class="btn btn-ghost">Current Round Only</button>
     </div>
+  </header>
 
-    <!-- ✅ Head-to-Head -->
-    <section class="card" style="margin-bottom:14px;">
-      <div class="cardHead">
-        <div class="cardTitle">Head-to-Head</div>
-        <div class="metaChip" id="h2hHint">Pick two players</div>
-      </div>
+  <main class="wrap">
+    <div id="fixturesError" class="error" style="display:none;"></div>
 
-      <div class="h2hGrid">
-        <div class="h2hSelects">
-          <select id="h2hA" class="select">
-            <option value="" selected disabled>Player 1</option>
-          </select>
-
-          <div class="h2hVs">VS</div>
-
-          <select id="h2hB" class="select">
-            <option value="" selected disabled>Player 2</option>
-          </select>
-
-          <button id="h2hSwap" class="btn ghost small" type="button">Swap</button>
-          <button id="h2hClear" class="btn ghost small" type="button">Clear</button>
-        </div>
-
-        <div class="h2hStats" id="h2hStats">
-          <div class="h2hStat"><div class="k">Matches</div><div class="v" id="h2hMatches">—</div></div>
-          <div class="h2hStat"><div class="k">Played</div><div class="v" id="h2hPlayed">—</div></div>
-          <div class="h2hStat"><div class="k">Pending</div><div class="v" id="h2hPending">—</div></div>
-          <div class="h2hStat"><div class="k" id="h2hAName">P1 Wins</div><div class="v" id="h2hAWins">—</div></div>
-          <div class="h2hStat"><div class="k" id="h2hBName">P2 Wins</div><div class="v" id="h2hBWins">—</div></div>
-        </div>
-      </div>
-
-      <div class="tableWrap compact" style="margin-top:12px;">
-        <table class="tbl" id="h2hTable">
-          <thead>
-            <tr>
-              <th style="width:90px;">ROUND</th>
-              <th style="text-align:left;">PLAYER A</th>
-              <th style="width:120px;">VS</th>
-              <th style="text-align:left;">PLAYER B</th>
-              <th style="width:160px;">WINNER</th>
-              <th style="width:130px;">STATUS</th>
-            </tr>
-          </thead>
-          <tbody id="h2hBody">
-            <tr><td colspan="6" class="mutedCenter">Select two players to view matches.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Pending / Played -->
     <section class="card">
-      <div class="cardHead">
-        <div class="cardTitle">Pending</div>
+      <div class="cardhead">
+        <div class="cardtitle">Pending</div>
+        <div class="cardmeta"><span class="tag tag-warn">To play</span></div>
       </div>
 
-      <div class="tableWrap">
-        <table class="tbl" id="pendingTable">
+      <div class="tablewrap">
+        <table class="table">
           <thead>
             <tr>
-              <th style="width:90px;">ROUND</th>
-              <th style="text-align:left;">PLAYER A</th>
-              <th style="width:120px;">VS</th>
-              <th style="text-align:left;">PLAYER B</th>
-              <th style="width:130px;">STATUS</th>
+              <th class="col-num">ROUND</th>
+              <th class="col-player">PLAYER A</th>
+              <th class="col-num">VS</th>
+              <th class="col-player">PLAYER B</th>
+              <th class="col-num">STATUS</th>
             </tr>
           </thead>
           <tbody id="pendingBody"></tbody>
         </table>
       </div>
+    </section>
 
-      <div style="height:16px"></div>
-
-      <div class="cardHead">
-        <div class="cardTitle">Played</div>
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Played</div>
+        <div class="cardmeta"><span class="tag tag-ok">Done</span></div>
       </div>
 
-      <div class="tableWrap">
-        <table class="tbl" id="playedTable">
+      <div class="tablewrap">
+        <table class="table">
           <thead>
             <tr>
-              <th style="width:90px;">ROUND</th>
-              <th style="text-align:left;">PLAYER A</th>
-              <th style="width:140px;">RESULT</th>
-              <th style="text-align:left;">PLAYER B</th>
-              <th style="width:160px;">WINNER</th>
-              <th style="width:130px;">STATUS</th>
+              <th class="col-num">ROUND</th>
+              <th class="col-player">PLAYER A</th>
+              <th class="col-num">RESULT</th>
+              <th class="col-player">PLAYER B</th>
+              <th class="col-num">STATUS</th>
             </tr>
           </thead>
           <tbody id="playedBody"></tbody>
@@ -151,7 +92,6 @@
 
       <p class="footer">Auto-updated from <code>data/fixtures.csv</code></p>
     </section>
-
   </main>
 
   <script src="js/fixtures.js"></script>
