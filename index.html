@@ -5,87 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pima Poa League — League Table</title>
 
-  <!-- Sporty font (same family you used elsewhere) -->
+  <!-- Sporty font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Your site CSS -->
+  <!-- Site CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
- 
-  <!-- HEADER / NAV (cohesive with other pages) -->
+  <!-- HEADER -->
   <header class="top">
-  <div class="brand">
-    <div class="logo">8</div>
-    <div>
-      <h1>Pima Poa League</h1>
-      <p class="sub">League Table</p>
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Pima Poa League</h1>
+        <p class="sub">League Table</p>
+      </div>
     </div>
-  </div>
- 
-    <!-- ⬇️ NAV MUST BE HERE -->
-  <nav class="tabs">
-    <a href="index.html" class="tab active">League</a>
-    <a href="fixtures.html" class="tab">Fixtures</a>
-    <a href="ranking.html" class="tab">Ranking</a>
-  </nav>
 
-  <div class="controls">
-    <div class="badge">Season: 1</div>
-    <select id="seasonSelect"></select>
-  </div>
-</header>
+    <!-- NAV (must use .tabs + .tab to match style.css) -->
+    <nav class="tabs" aria-label="Primary">
+      <a href="index.html" class="tab active">League</a>
+      <a href="fixtures.html" class="tab">Fixtures</a>
+      <a href="ranking.html" class="tab">Ranking</a>
+    </nav>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+      <div class="badge" id="seasonBadge">Season: <span id="seasonBadgeText">—</span></div>
+      <select id="seasonSelect" class="select"></select>
+    </div>
+  </header>
 
   <main class="wrap">
-
-    <!-- ERROR BANNER (hidden unless needed) -->
-    <div id="errorBox" class="errorBox" style="display:none;"></div>
+    <!-- ERROR BANNER -->
+    <div id="leagueError" class="alert" style="display:none;"></div>
 
     <!-- INSIGHTS -->
-    <section class="panel">
-      <div class="panelHead">
+    <section class="card">
+      <div class="card-head">
         <div>
-          <h2 class="panelTitle">Insights</h2>
-          <p class="panelSub">Quick highlights from this season</p>
+          <h2 class="card-title">Insights</h2>
+          <p class="card-sub">Quick highlights from this season</p>
         </div>
 
-        <div class="miniLegend">
-          <span class="pill green"><span class="dot"></span> Top 5</span>
-          <span class="pill red"><span class="dot"></span> Bottom 2</span>
+        <div class="legend">
+          <span class="pill tiny"><span class="dot green"></span>Top 5</span>
+          <span class="pill tiny"><span class="dot red"></span>Bottom 2</span>
         </div>
       </div>
 
-      <div class="insightsGrid" id="insightsGrid">
-        <!-- Filled by JS -->
-      </div>
-
-      <div class="sparks">
-        <div class="sparkCard">
-          <div class="sparkTitle">Top 3 Points</div>
-          <div class="sparkBars" id="sparkPTS"></div>
+      <div class="insights-grid">
+        <div class="insight-box">
+          <div class="insight-title">Top 3 Points</div>
+          <div id="insTopPts" class="insight-list">—</div>
         </div>
 
-        <div class="sparkCard">
-          <div class="sparkTitle">Top 3 Ball Diff</div>
-          <div class="sparkBars" id="sparkBD"></div>
+        <div class="insight-box">
+          <div class="insight-title">Top 3 Ball Diff</div>
+          <div id="insTopBd" class="insight-list">—</div>
         </div>
       </div>
     </section>
 
-    <!-- LEAGUE TABLE -->
-    <section class="panel">
-      <div class="panelHead">
+    <!-- STANDINGS -->
+    <section class="card">
+      <div class="card-head">
         <div>
-          <h2 class="panelTitle">Standings</h2>
-          <p class="panelSub remember">Auto-updated from <code>data/league.csv</code></p>
+          <h2 class="card-title">Standings</h2>
+          <p class="card-sub">Auto-updated from <code>data/league.csv</code></p>
         </div>
-        <div class="meta" id="playersCount">Players: —</div>
+
+        <div class="meta-right">
+          <span class="muted">Players: </span><span id="playersCount">—</span>
+        </div>
       </div>
 
-      <div class="tableWrap">
+      <div class="table-wrap">
         <table class="table" id="leagueTable">
           <thead>
             <tr>
@@ -107,10 +105,171 @@
       </div>
     </section>
 
-    <p class="footerNote">Pima Poa • Pool League</p>
+    <p class="footer">Pima Poa • Pool League</p>
   </main>
 
-  <!-- JS -->
-  <script src="js/league.js"></script>
+  <script>
+    // ---------- helpers ----------
+    function showError(msg) {
+      const el = document.getElementById("leagueError");
+      el.style.display = "block";
+      el.textContent = msg;
+    }
+    function hideError() {
+      const el = document.getElementById("leagueError");
+      el.style.display = "none";
+      el.textContent = "";
+    }
+
+    // Very small CSV parser (handles commas in simple files; your CSV is simple)
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const header = lines[0].split(",").map(s => s.trim());
+      const rows = lines.slice(1).map(line => line.split(",").map(s => (s ?? "").trim()));
+      return { header, rows };
+    }
+
+    function idxOf(header, name) {
+      const i = header.indexOf(name);
+      if (i === -1) throw new Error("Missing column in league.csv: " + name);
+      return i;
+    }
+
+    function renderInsights(data) {
+      const topPtsEl = document.getElementById("insTopPts");
+      const topBdEl  = document.getElementById("insTopBd");
+
+      // sort copies (don’t mutate)
+      const byPts = [...data].sort((a,b) => (b.PTS - a.PTS) || (b.BD - a.BD));
+      const byBd  = [...data].sort((a,b) => (b.BD - a.BD) || (b.PTS - a.PTS));
+
+      const top3Pts = byPts.slice(0,3).map(r => `${r.Player} <span class="ins-num">${r.PTS}</span>`);
+      const top3Bd  = byBd.slice(0,3).map(r => `${r.Player} <span class="ins-num">${r.BD > 0 ? "+" : ""}${r.BD}</span>`);
+
+      topPtsEl.innerHTML = top3Pts.length ? `<ol>${top3Pts.map(x=>`<li>${x}</li>`).join("")}</ol>` : "—";
+      topBdEl.innerHTML  = top3Bd.length  ? `<ol>${top3Bd.map(x=>`<li>${x}</li>`).join("")}</ol>` : "—";
+    }
+
+    function renderTable(data) {
+      const body = document.getElementById("leagueBody");
+      const playersCount = document.getElementById("playersCount");
+
+      body.innerHTML = "";
+
+      playersCount.textContent = String(data.length);
+
+      data.forEach((r, i) => {
+        const tr = document.createElement("tr");
+
+        // top 5 green, bottom 2 red, else neutral
+        let posClass = "pos neutral";
+        if (i < 5) posClass = "pos top";
+        if (i >= data.length - 2) posClass = "pos bottom";
+
+        tr.innerHTML = `
+          <td><span class="${posClass}">${r.Pos}</span></td>
+          <td class="left strong">${r.Player}</td>
+          <td>${r.P}</td>
+          <td>${r.W}</td>
+          <td>${r.L}</td>
+          <td>${r.BF}</td>
+          <td>${r.BA}</td>
+          <td>${r.BD}</td>
+          <td>${r["7B"]}</td>
+          <td>${r.BP}</td>
+          <td class="strong">${r.PTS}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function fillSeasonUI(seasons, selected) {
+      const select = document.getElementById("seasonSelect");
+      const badgeText = document.getElementById("seasonBadgeText");
+
+      select.innerHTML = "";
+      seasons.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = "Season " + s;
+        select.appendChild(opt);
+      });
+
+      select.value = selected;
+      badgeText.textContent = selected;
+    }
+
+    // ---------- main ----------
+    (async function initLeague() {
+      try {
+        hideError();
+
+        const res = await fetch("data/league.csv", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch data/league.csv (" + res.status + ")");
+
+        const text = await res.text();
+        const { header, rows } = parseCSV(text);
+
+        // columns (your exact header names)
+        const iSeason = idxOf(header, "Season");
+        const iPos    = idxOf(header, "Pos");
+        const iPlayer = idxOf(header, "Player");
+        const iP      = idxOf(header, "P");
+        const iW      = idxOf(header, "W");
+        const iL      = idxOf(header, "L");
+        const iBF     = idxOf(header, "BF");
+        const iBA     = idxOf(header, "BA");
+        const iBD     = idxOf(header, "BD");
+        const i7B     = idxOf(header, "7B");
+        const iBP     = idxOf(header, "BP");
+        const iPTS    = idxOf(header, "PTS");
+
+        const all = rows
+          .filter(r => r.length >= header.length && r[iPlayer])
+          .map(r => ({
+            Season: r[iSeason],
+            Pos: Number(r[iPos]) || r[iPos],
+            Player: r[iPlayer],
+            P: Number(r[iP]) || 0,
+            W: Number(r[iW]) || 0,
+            L: Number(r[iL]) || 0,
+            BF: Number(r[iBF]) || 0,
+            BA: Number(r[iBA]) || 0,
+            BD: Number(r[iBD]) || 0,
+            "7B": Number(r[i7B]) || 0,
+            BP: Number(r[iBP]) || 0,
+            PTS: Number(r[iPTS]) || 0
+          }));
+
+        const seasons = [...new Set(all.map(r => r.Season))].map(Number).sort((a,b)=>a-b).map(String);
+        const defaultSeason = seasons[seasons.length - 1] || "1";
+
+        fillSeasonUI(seasons, defaultSeason);
+
+        function renderForSeason(season) {
+          // filter
+          const data = all.filter(r => r.Season === season);
+
+          // sort by pos (or pts fallback)
+          data.sort((a,b) => (Number(a.Pos) - Number(b.Pos)) || (b.PTS - a.PTS));
+
+          renderInsights(data);
+          renderTable(data);
+        }
+
+        renderForSeason(defaultSeason);
+
+        document.getElementById("seasonSelect").addEventListener("change", (e) => {
+          const season = e.target.value;
+          document.getElementById("seasonBadgeText").textContent = season;
+          renderForSeason(season);
+        });
+
+      } catch (err) {
+        showError("Couldn't load league table: " + (err?.message || err));
+        console.error(err);
+      }
+    })();
+  </script>
 </body>
 </html>
