@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pima Poa League — League Table</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Fonts -->
+  <!-- Sporty font (same family you used elsewhere) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Shared site CSS -->
+  <!-- Your site CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <!-- TOP BAR (shared look) -->
+
+  <!-- HEADER / NAV (cohesive with other pages) -->
   <header class="top">
     <div class="brand">
       <div class="logo">8</div>
@@ -25,51 +26,92 @@
       </div>
     </div>
 
-    <nav class="nav">
-      <a class="navlink active" href="./index.html">League</a>
-      <a class="navlink" href="./fixtures.html">Fixtures</a>
-      <a class="navlink" href="./ranking.html">Ranking</a>
-    </nav>
-
     <div class="controls">
-      <div id="seasonBadge" class="badge">Season: —</div>
-      <select id="seasonSelect" class="select"></select>
+      <nav class="tabs" aria-label="Site navigation">
+        <a class="tab active" href="index.html">League</a>
+        <a class="tab" href="fixtures.html">Fixtures</a>
+        <a class="tab" href="ranking.html">Ranking</a>
+      </nav>
+
+      <div class="rightControls">
+        <div id="seasonBadge" class="badge">Season: —</div>
+        <select id="seasonSelect" class="select"></select>
+      </div>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="card">
-      <div class="cardhead">
-        <div class="cardtitle">Standings</div>
-        <div id="leagueMeta" class="cardmeta">—</div>
+
+    <!-- ERROR BANNER (hidden unless needed) -->
+    <div id="errorBox" class="errorBox" style="display:none;"></div>
+
+    <!-- INSIGHTS -->
+    <section class="panel">
+      <div class="panelHead">
+        <div>
+          <h2 class="panelTitle">Insights</h2>
+          <p class="panelSub">Quick highlights from this season</p>
+        </div>
+
+        <div class="miniLegend">
+          <span class="pill green"><span class="dot"></span> Top 5</span>
+          <span class="pill red"><span class="dot"></span> Bottom 2</span>
+        </div>
       </div>
 
-      <div class="tablewrap">
+      <div class="insightsGrid" id="insightsGrid">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="sparks">
+        <div class="sparkCard">
+          <div class="sparkTitle">Top 3 Points</div>
+          <div class="sparkBars" id="sparkPTS"></div>
+        </div>
+
+        <div class="sparkCard">
+          <div class="sparkTitle">Top 3 Ball Diff</div>
+          <div class="sparkBars" id="sparkBD"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEAGUE TABLE -->
+    <section class="panel">
+      <div class="panelHead">
+        <div>
+          <h2 class="panelTitle">Standings</h2>
+          <p class="panelSub remember">Auto-updated from <code>data/league.csv</code></p>
+        </div>
+        <div class="meta" id="playersCount">Players: —</div>
+      </div>
+
+      <div class="tableWrap">
         <table class="table" id="leagueTable">
           <thead>
             <tr>
-              <th class="col-pos">POS</th>
-              <th class="col-player">PLAYER</th>
-              <th class="col-num">P</th>
-              <th class="col-num">W</th>
-              <th class="col-num">L</th>
-              <th class="col-num">BF</th>
-              <th class="col-num">BA</th>
-              <th class="col-num">BD</th>
-              <th class="col-num">7B</th>
-              <th class="col-num">BP</th>
-              <th class="col-num">PTS</th>
+              <th>POS</th>
+              <th class="left">PLAYER</th>
+              <th>P</th>
+              <th>W</th>
+              <th>L</th>
+              <th>BF</th>
+              <th>BA</th>
+              <th>BD</th>
+              <th>7B</th>
+              <th>BP</th>
+              <th>PTS</th>
             </tr>
           </thead>
           <tbody id="leagueBody"></tbody>
         </table>
       </div>
-
-      <p class="footer">Auto-updated from <code>data/league.csv</code></p>
-      <div id="leagueError" class="error" style="display:none;"></div>
     </section>
+
+    <p class="footerNote">Pima Poa • Pool League</p>
   </main>
 
+  <!-- JS -->
   <script src="js/league.js"></script>
 </body>
 </html>
