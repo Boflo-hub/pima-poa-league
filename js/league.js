@@ -1,7 +1,7 @@
-/* League table + Season switcher + Insights
+/* League table + Season switcher + Insights (Attack/Defense focus)
    Source: data/league.csv
 
-   Expected CSV header (your working one):
+   Expected CSV header:
    Season,Pos,Player,P,W,L,BF,BA,BD,7B,BP,PTS
 */
 
@@ -12,8 +12,8 @@ const elSeasonBadge  = document.getElementById("seasonBadge");
 const elBody         = document.getElementById("leagueBody");
 const elPlayersCount = document.getElementById("playersCount");
 const elInsightsGrid = document.getElementById("insightsGrid");
-const elSparkPTS     = document.getElementById("sparkPTS");
-const elSparkBD      = document.getElementById("sparkBD");
+const elSparkPTS     = document.getElementById("sparkPTS"); // we will use for BF now (still ok)
+const elSparkBD      = document.getElementById("sparkBD");  // we will use for BA now (still ok)
 const elErrorBox     = document.getElementById("errorBox");
 
 function showError(msg) {
@@ -26,7 +26,7 @@ function hideError() {
   elErrorBox.textContent = "";
 }
 
-// Simple CSV parsing (handles basic commas; keep your CSV clean: no commas inside names)
+// Simple CSV parsing (keep your CSV clean: no commas inside names)
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   const header = lines[0].split(",").map(s => s.trim());
@@ -77,17 +77,30 @@ function card({ title, value, sub, tone = "neutral" }) {
   `;
 }
 
-function sparkBars(targetEl, items, valueKey, labelKey, suffix = "") {
+function sparkBars(targetEl, items, valueKey, labelKey, suffix = "", invert = false) {
   targetEl.innerHTML = "";
 
-  const max = Math.max(...items.map(x => x[valueKey]), 1);
+  // For invert lists like BA (lower is better), we still want a visible bar:
+  // We map value -> (max - value + 1)
+  const values = items.map(x => x[valueKey]);
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
 
   items.forEach((it, k) => {
-    const pct = Math.round((it[valueKey] / max) * 100);
+    let pct;
+    if (!invert) {
+      pct = Math.round((it[valueKey] / max) * 100);
+    } else {
+      const span = (max - min) || 1;
+      pct = Math.round(((max - it[valueKey]) / span) * 100);
+      // ensure tiny values still show
+      pct = Math.max(pct, 8);
+    }
+
     const row = document.createElement("div");
     row.className = "sparkRow";
     row.innerHTML = `
-      <div class="sparkName">${k+1}. ${it[labelKey]}</div>
+      <div class="sparkName">${k + 1}. ${it[labelKey]}</div>
       <div class="sparkBar">
         <div class="sparkFill" style="width:${pct}%"></div>
       </div>
@@ -100,20 +113,16 @@ function sparkBars(targetEl, items, valueKey, labelKey, suffix = "") {
 function renderTable(rows, idx) {
   elBody.innerHTML = "";
 
-  // Sort by Pos (numeric)
   const sorted = [...rows].sort((a, b) => toNum(a[idx.pos]) - toNum(b[idx.pos]));
   const n = sorted.length;
 
-  sorted.forEach((r, i) => {
+  sorted.forEach((r) => {
     const pos = toNum(r[idx.pos]);
 
-    // Your top/bottom coloring rule:
-    // top 5 green, bottom 2 red, else grey
+    // Top 5 green, bottom 2 red
     let posClass = "posGrey";
     if (pos <= 5) posClass = "posGreen";
-    if (pos >= (n - 1)) posClass = "posRed"; // last 2 positions => n-1 and n
-    // BUT if pos numbering is 1..N, bottom2 are N-1 and N:
-    // If someone skipped a number, this still works mostly by using n.
+    if (pos >= (n - 1)) posClass = "posRed"; // assumes pos is 1..n
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -143,74 +152,81 @@ function renderInsights(rows, idx) {
     return;
   }
 
-  const byPts = [...rows].sort((a,b) => toNum(b[idx.PTS]) - toNum(a[idx.PTS]));
-  const byWinPct = [...rows].sort((a,b) => computeWinPct(b, idx) - computeWinPct(a, idx));
-  const by7B = [...rows].sort((a,b) => toNum(b[idx.sevenB]) - toNum(a[idx.sevenB]));
-  const byBD = [...rows].sort((a,b) => toNum(b[idx.BD]) - toNum(a[idx.BD]));
+  // Sorters
+  const byPts   = [...rows].sort((a,b) => toNum(b[idx.PTS]) - toNum(a[idx.PTS]));
+  const byWinPc = [...rows].sort((a,b) => computeWinPct(b, idx) - computeWinPct(a, idx));
+  const byBF    = [...rows].sort((a,b) => toNum(b[idx.BF]) - toNum(a[idx.BF])); // Attack
+  const byBA    = [...rows].sort((a,b) => toNum(a[idx.BA]) - toNum(b[idx.BA])); // Defense (lower)
+  const byBD    = [...rows].sort((a,b) => toNum(b[idx.BD]) - toNum(a[idx.BD]));
+  const by7B    = [...rows].sort((a,b) => toNum(b[idx.sevenB]) - toNum(a[idx.sevenB]));
 
   const leader = byPts[0];
   const runner = byPts[1] || byPts[0];
-
   const gap = toNum(leader[idx.PTS]) - toNum(runner[idx.PTS]);
 
-  const bestPctRow = byWinPct[0];
+  const bestPctRow = byWinPc[0];
   const bestPct = Math.round(computeWinPct(bestPctRow, idx) * 100);
 
-  const top7B = by7B[0];
-  const topBD = byBD[0];
+  // Attack/Defense winners
+  const bestAttack = byBF[0];
+  const bestDefense = byBA[0];
+  const bestDiff = byBD[0];
+  const most7B = by7B[0];
 
+  // Insights cards (Attack/Defense centered)
   elInsightsGrid.innerHTML = [
     card({
-      title: "Leader (PTS)",
-      value: `${leader[idx.player]} • ${leader[idx.PTS]}`,
-      sub: `Position ${leader[idx.pos]}`,
+      title: "Best Attack (BF)",
+      value: `${bestAttack[idx.player]} • ${bestAttack[idx.BF]}`,
+      sub: `Balls For leader`,
       tone: "good"
+    }),
+    card({
+      title: "Best Defense (BA)",
+      value: `${bestDefense[idx.player]} • ${bestDefense[idx.BA]}`,
+      sub: `Lowest Balls Against`,
+      tone: "good"
+    }),
+    card({
+      title: "Best Ball Diff (BD)",
+      value: `${bestDiff[idx.player]} • ${bestDiff[idx.BD]}`,
+      sub: `Net dominance`,
+      tone: "good"
+    }),
+    card({
+      title: "Most 7-Ballers",
+      value: `${most7B[idx.player]} • ${most7B[idx.sevenB]}`,
+      sub: `7B this season`,
+      tone: "neutral"
     }),
     card({
       title: "Best Win %",
       value: `${bestPctRow[idx.player]} • ${bestPct}%`,
       sub: `${bestPctRow[idx.W]} wins / ${bestPctRow[idx.P]} played`,
-      tone: "good"
-    }),
-    card({
-      title: "Most 7-Ballers",
-      value: `${top7B[idx.player]} • ${top7B[idx.sevenB]}`,
-      sub: `7B this season`,
-      tone: "good"
-    }),
-    card({
-      title: "Best Ball Diff (BD)",
-      value: `${topBD[idx.player]} • ${topBD[idx.BD]}`,
-      sub: `BF ${topBD[idx.BF]} • BA ${topBD[idx.BA]}`,
-      tone: "good"
+      tone: "neutral"
     }),
     card({
       title: "Title Race Gap",
       value: `${gap} pts`,
       sub: `#1 vs #2 (${leader[idx.player]} vs ${runner[idx.player]})`,
       tone: gap <= 3 ? "warn" : "neutral"
-    }),
-    card({
-      title: "Most Matches Played",
-      value: `${[...rows].sort((a,b)=>toNum(b[idx.P])-toNum(a[idx.P]))[0][idx.player]}`,
-      sub: `Based on P column`,
-      tone: "neutral"
     })
   ].join("");
 
-  // Spark bars (top 3)
-  const top3Pts = byPts.slice(0, 3).map(r => ({
-    player: r[idx.player],
-    val: toNum(r[idx.PTS])
-  }));
+  // Spark bars: use existing placeholders
+  // We'll rename meaning by updating the spark titles in the DOM
+  // If sparkTitle text exists, update it
+  const sparkTitles = document.querySelectorAll(".sparkTitle");
+  if (sparkTitles.length >= 2) {
+    sparkTitles[0].textContent = "Top 3 Balls For (BF)";
+    sparkTitles[1].textContent = "Top 3 Defense (Lowest BA)";
+  }
 
-  const top3BD = byBD.slice(0, 3).map(r => ({
-    player: r[idx.player],
-    val: toNum(r[idx.BD])
-  }));
+  const top3BF = byBF.slice(0,3).map(r => ({ player: r[idx.player], val: toNum(r[idx.BF]) }));
+  const top3BA = byBA.slice(0,3).map(r => ({ player: r[idx.player], val: toNum(r[idx.BA]) }));
 
-  sparkBars(elSparkPTS, top3Pts, "val", "player", "");
-  sparkBars(elSparkBD, top3BD, "val", "player", "");
+  sparkBars(elSparkPTS, top3BF, "val", "player", "");
+  sparkBars(elSparkBD, top3BA, "val", "player", "", true);
 }
 
 function seasonsList(allRows, idx) {
@@ -220,7 +236,6 @@ function seasonsList(allRows, idx) {
 
 function setSeasonUI(season) {
   elSeasonBadge.textContent = `Season: ${season}`;
-  // Also store in URL for sharing
   const url = new URL(window.location.href);
   url.searchParams.set("season", season);
   window.history.replaceState({}, "", url.toString());
@@ -257,13 +272,11 @@ async function init() {
     const defaultSeason = seasons[seasons.length - 1]; // latest
     const selectedSeason = getSeasonFromURL(defaultSeason);
 
-    // Apply selection
     elSeasonSelect.value = selectedSeason;
     setSeasonUI(selectedSeason);
 
     function renderSeason(season) {
       setSeasonUI(season);
-
       const filtered = rows.filter(r => String(r[idx.season]).trim() === String(season));
       renderInsights(filtered, idx);
       renderTable(filtered, idx);
