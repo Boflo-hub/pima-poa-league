@@ -2,62 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pima Poa League — Ranking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-  <main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Ranking Table</h1>
+        <p class="sub">Pima Poa Pool League</p>
+      </div>
+    </div>
 
-    <!-- TOPBAR + NAV + SEASON -->
-    <div class="topbar">
-      <div class="brandline">
-        <div class="brandDot">8</div>
-        <div class="brandText">
-          <h1>Ranking Table</h1>
-          <p>Pima Poa Pool League</p>
+    <nav class="nav">
+      <a class="navlink" href="./index.html">League</a>
+      <a class="navlink" href="./fixtures.html">Fixtures</a>
+      <a class="navlink active" href="./ranking.html">Ranking</a>
+    </nav>
+
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect" class="select"></select>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- INSIGHTS (restored) -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Insights</div>
+        <div id="insightsMeta" class="cardmeta">—</div>
+      </div>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="statlabel">#1 (Score)</div>
+          <div id="statTop" class="statvalue">—</div>
+          <div id="statTopSub" class="statmeta">—</div>
+        </div>
+        <div class="stat">
+          <div class="statlabel">Most Wins</div>
+          <div id="statWins" class="statvalue">—</div>
+          <div id="statWinsSub" class="statmeta">—</div>
+        </div>
+        <div class="stat">
+          <div class="statlabel">Most Bonus</div>
+          <div id="statBonus" class="statvalue">—</div>
+          <div id="statBonusSub" class="statmeta">—</div>
+        </div>
+        <div class="stat">
+          <div class="statlabel">Most 7-Ballers</div>
+          <div id="stat7b" class="statvalue">—</div>
+          <div id="stat7bSub" class="statmeta">—</div>
         </div>
       </div>
-
-      <nav class="nav">
-        <a href="index.html">League</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a class="active" href="ranking.html">Ranking</a>
-      </nav>
-
-      <div class="seasonControls">
-        <div id="seasonBadge" class="chip">Season: —</div>
-        <select id="seasonSelect" class="select"></select>
-      </div>
-    </div>
-
-    <div id="errBox" class="err" style="display:none;">
-      <div class="errTitle">Couldn't load ranking table</div>
-      <div id="errMsg" class="errMsg"></div>
-    </div>
+    </section>
 
     <section class="card">
-      <div class="cardHead">
-        <div class="cardTitle">Standings</div>
-        <div id="meta" class="metaChip">Players: —</div>
+      <div class="cardhead">
+        <div class="cardtitle">Standings</div>
+        <div id="rankMeta" class="cardmeta">—</div>
       </div>
 
-      <div class="tableWrap compact">
-        <table class="tbl stats" id="rankingTable">
+      <div class="tablewrap">
+        <table class="table" id="rankingTable">
           <thead>
             <tr>
-              <th style="width:84px;">POS</th>
-              <th style="text-align:left;">PLAYER</th>
-              <th style="width:70px;">W</th>
-              <th style="width:90px;">BONUS</th>
-              <th style="width:70px;">7B</th>
-              <th style="width:110px;">SCORE</th>
+              <th class="col-pos">POS</th>
+              <th class="col-player">PLAYER</th>
+              <th class="col-num">W</th>
+              <th class="col-num">BONUS</th>
+              <th class="col-num">7B</th>
+              <th class="col-num">SCORE</th>
             </tr>
           </thead>
           <tbody id="rankingBody"></tbody>
@@ -65,8 +89,8 @@
       </div>
 
       <p class="footer">Auto-updated from <code>data/ranking.csv</code></p>
+      <div id="rankingError" class="error" style="display:none;"></div>
     </section>
-
   </main>
 
   <script src="js/ranking.js"></script>
