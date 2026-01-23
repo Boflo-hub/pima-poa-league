@@ -550,3 +550,109 @@ body{
 .select option{
   color: #111; /* dropdown list on some browsers */
 }
+/* ===== Site Topbar + Nav ===== */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin: 14px auto 14px;
+}
+
+.brandline{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.brandDot{
+  width:34px;height:34px;border-radius:12px;
+  display:grid;place-items:center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  font-weight:900;
+}
+
+.brandText h1{
+  margin:0;
+  font-size:18px;
+  letter-spacing:.3px;
+}
+.brandText p{
+  margin:0;
+  opacity:.7;
+  font-size:12px;
+}
+
+/* Nav pills */
+.nav{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.nav a{
+  text-decoration:none;
+  color: rgba(255,255,255,0.90);
+  font-weight:800;
+  font-size:13px;
+  padding:10px 12px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+.nav a:hover{
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.16);
+}
+.nav a.active{
+  background: rgba(0,255,190,0.16);
+  border-color: rgba(0,255,190,0.28);
+  box-shadow: 0 0 0 1px rgba(0,255,190,0.10), 0 18px 40px rgba(0,255,190,0.10);
+}
+
+/* Season controls */
+.seasonControls{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.chip{
+  padding:10px 12px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.10);
+  font-weight:800;
+  font-size:13px;
+}
+
+.select{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.92);
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight:800;
+  outline:none;
+}
+.select:focus{
+  border-color: rgba(0,255,190,0.35);
+  box-shadow: 0 0 0 4px rgba(0,255,190,0.10);
+}
+.select option{ color:#111; }
+
+/* Error box (shared) */
+.err{
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255,77,77,0.10);
+  border: 1px solid rgba(255,77,77,0.22);
+  color: #ffd7d7;
+}
+.errTitle{ font-weight:900; margin-bottom:4px; }
+.errMsg{ opacity:.9; white-space:pre-wrap; }
