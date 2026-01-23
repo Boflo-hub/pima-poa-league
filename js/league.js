@@ -1,176 +1,284 @@
-(() => {
-  const CSV_PATH = "data/league.csv";
+/* League table + Season switcher + Insights
+   Source: data/league.csv
 
-  const seasonSelect = document.getElementById("seasonSelect");
-  const seasonBadge = document.getElementById("seasonBadge");
-  const leagueBody = document.getElementById("leagueBody");
-  const leagueMeta = document.getElementById("leagueMeta");
-  const leagueError = document.getElementById("leagueError");
+   Expected CSV header (your working one):
+   Season,Pos,Player,P,W,L,BF,BA,BD,7B,BP,PTS
+*/
 
-  function showError(msg) {
-    leagueError.style.display = "block";
-    leagueError.textContent = msg;
+const LEAGUE_CSV = "data/league.csv";
+
+const elSeasonSelect = document.getElementById("seasonSelect");
+const elSeasonBadge  = document.getElementById("seasonBadge");
+const elBody         = document.getElementById("leagueBody");
+const elPlayersCount = document.getElementById("playersCount");
+const elInsightsGrid = document.getElementById("insightsGrid");
+const elSparkPTS     = document.getElementById("sparkPTS");
+const elSparkBD      = document.getElementById("sparkBD");
+const elErrorBox     = document.getElementById("errorBox");
+
+function showError(msg) {
+  elErrorBox.style.display = "block";
+  elErrorBox.textContent = msg;
+}
+
+function hideError() {
+  elErrorBox.style.display = "none";
+  elErrorBox.textContent = "";
+}
+
+// Simple CSV parsing (handles basic commas; keep your CSV clean: no commas inside names)
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  const header = lines[0].split(",").map(s => s.trim());
+  const rows = lines.slice(1).map(line => line.split(",").map(s => (s ?? "").trim()));
+  return { header, rows };
+}
+
+function idxMap(header) {
+  const i = (name) => header.indexOf(name);
+  const required = ["Season","Pos","Player","P","W","L","BF","BA","BD","7B","BP","PTS"];
+  for (const col of required) {
+    if (i(col) === -1) throw new Error(`Missing column in league.csv: ${col}`);
+  }
+  return {
+    season: i("Season"),
+    pos: i("Pos"),
+    player: i("Player"),
+    P: i("P"),
+    W: i("W"),
+    L: i("L"),
+    BF: i("BF"),
+    BA: i("BA"),
+    BD: i("BD"),
+    sevenB: i("7B"),
+    BP: i("BP"),
+    PTS: i("PTS")
+  };
+}
+
+function toNum(v) {
+  const n = Number(String(v).replace(/[^\d\-\.\+]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function computeWinPct(row, idx) {
+  const p = toNum(row[idx.P]);
+  const w = toNum(row[idx.W]);
+  return p > 0 ? (w / p) : 0;
+}
+
+function card({ title, value, sub, tone = "neutral" }) {
+  return `
+    <div class="insightCard ${tone}">
+      <div class="insightTitle">${title}</div>
+      <div class="insightValue">${value}</div>
+      <div class="insightSub">${sub || ""}</div>
+    </div>
+  `;
+}
+
+function sparkBars(targetEl, items, valueKey, labelKey, suffix = "") {
+  targetEl.innerHTML = "";
+
+  const max = Math.max(...items.map(x => x[valueKey]), 1);
+
+  items.forEach((it, k) => {
+    const pct = Math.round((it[valueKey] / max) * 100);
+    const row = document.createElement("div");
+    row.className = "sparkRow";
+    row.innerHTML = `
+      <div class="sparkName">${k+1}. ${it[labelKey]}</div>
+      <div class="sparkBar">
+        <div class="sparkFill" style="width:${pct}%"></div>
+      </div>
+      <div class="sparkVal">${it[valueKey]}${suffix}</div>
+    `;
+    targetEl.appendChild(row);
+  });
+}
+
+function renderTable(rows, idx) {
+  elBody.innerHTML = "";
+
+  // Sort by Pos (numeric)
+  const sorted = [...rows].sort((a, b) => toNum(a[idx.pos]) - toNum(b[idx.pos]));
+  const n = sorted.length;
+
+  sorted.forEach((r, i) => {
+    const pos = toNum(r[idx.pos]);
+
+    // Your top/bottom coloring rule:
+    // top 5 green, bottom 2 red, else grey
+    let posClass = "posGrey";
+    if (pos <= 5) posClass = "posGreen";
+    if (pos >= (n - 1)) posClass = "posRed"; // last 2 positions => n-1 and n
+    // BUT if pos numbering is 1..N, bottom2 are N-1 and N:
+    // If someone skipped a number, this still works mostly by using n.
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="posCell"><span class="posPill ${posClass}">${pos}</span></td>
+      <td class="left strong">${r[idx.player]}</td>
+      <td>${r[idx.P]}</td>
+      <td>${r[idx.W]}</td>
+      <td>${r[idx.L]}</td>
+      <td>${r[idx.BF]}</td>
+      <td>${r[idx.BA]}</td>
+      <td>${r[idx.BD]}</td>
+      <td>${r[idx.sevenB]}</td>
+      <td>${r[idx.BP]}</td>
+      <td class="strong">${r[idx.PTS]}</td>
+    `;
+    elBody.appendChild(tr);
+  });
+
+  elPlayersCount.textContent = `Players: ${n}`;
+}
+
+function renderInsights(rows, idx) {
+  if (!rows.length) {
+    elInsightsGrid.innerHTML = `<div class="muted">No data for this season.</div>`;
+    elSparkPTS.innerHTML = "";
+    elSparkBD.innerHTML = "";
+    return;
   }
 
-  function hideError() {
-    leagueError.style.display = "none";
-    leagueError.textContent = "";
-  }
+  const byPts = [...rows].sort((a,b) => toNum(b[idx.PTS]) - toNum(a[idx.PTS]));
+  const byWinPct = [...rows].sort((a,b) => computeWinPct(b, idx) - computeWinPct(a, idx));
+  const by7B = [...rows].sort((a,b) => toNum(b[idx.sevenB]) - toNum(a[idx.sevenB]));
+  const byBD = [...rows].sort((a,b) => toNum(b[idx.BD]) - toNum(a[idx.BD]));
 
-  // Simple CSV parser that handles quoted commas
-  function parseCSV(text) {
-    const rows = [];
-    let row = [];
-    let cur = "";
-    let inQuotes = false;
+  const leader = byPts[0];
+  const runner = byPts[1] || byPts[0];
 
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      const next = text[i + 1];
+  const gap = toNum(leader[idx.PTS]) - toNum(runner[idx.PTS]);
 
-      if (ch === '"' && next === '"') { cur += '"'; i++; continue; }
-      if (ch === '"') { inQuotes = !inQuotes; continue; }
+  const bestPctRow = byWinPct[0];
+  const bestPct = Math.round(computeWinPct(bestPctRow, idx) * 100);
 
-      if (!inQuotes && (ch === ",")) {
-        row.push(cur.trim());
-        cur = "";
-        continue;
-      }
+  const top7B = by7B[0];
+  const topBD = byBD[0];
 
-      if (!inQuotes && (ch === "\n" || ch === "\r")) {
-        if (ch === "\r" && next === "\n") i++;
-        row.push(cur.trim());
-        cur = "";
-        if (row.some(v => v !== "")) rows.push(row);
-        row = [];
-        continue;
-      }
+  elInsightsGrid.innerHTML = [
+    card({
+      title: "Leader (PTS)",
+      value: `${leader[idx.player]} • ${leader[idx.PTS]}`,
+      sub: `Position ${leader[idx.pos]}`,
+      tone: "good"
+    }),
+    card({
+      title: "Best Win %",
+      value: `${bestPctRow[idx.player]} • ${bestPct}%`,
+      sub: `${bestPctRow[idx.W]} wins / ${bestPctRow[idx.P]} played`,
+      tone: "good"
+    }),
+    card({
+      title: "Most 7-Ballers",
+      value: `${top7B[idx.player]} • ${top7B[idx.sevenB]}`,
+      sub: `7B this season`,
+      tone: "good"
+    }),
+    card({
+      title: "Best Ball Diff (BD)",
+      value: `${topBD[idx.player]} • ${topBD[idx.BD]}`,
+      sub: `BF ${topBD[idx.BF]} • BA ${topBD[idx.BA]}`,
+      tone: "good"
+    }),
+    card({
+      title: "Title Race Gap",
+      value: `${gap} pts`,
+      sub: `#1 vs #2 (${leader[idx.player]} vs ${runner[idx.player]})`,
+      tone: gap <= 3 ? "warn" : "neutral"
+    }),
+    card({
+      title: "Most Matches Played",
+      value: `${[...rows].sort((a,b)=>toNum(b[idx.P])-toNum(a[idx.P]))[0][idx.player]}`,
+      sub: `Based on P column`,
+      tone: "neutral"
+    })
+  ].join("");
 
-      cur += ch;
+  // Spark bars (top 3)
+  const top3Pts = byPts.slice(0, 3).map(r => ({
+    player: r[idx.player],
+    val: toNum(r[idx.PTS])
+  }));
+
+  const top3BD = byBD.slice(0, 3).map(r => ({
+    player: r[idx.player],
+    val: toNum(r[idx.BD])
+  }));
+
+  sparkBars(elSparkPTS, top3Pts, "val", "player", "");
+  sparkBars(elSparkBD, top3BD, "val", "player", "");
+}
+
+function seasonsList(allRows, idx) {
+  const set = new Set(allRows.map(r => String(r[idx.season]).trim()).filter(Boolean));
+  return [...set].sort((a,b) => Number(a) - Number(b));
+}
+
+function setSeasonUI(season) {
+  elSeasonBadge.textContent = `Season: ${season}`;
+  // Also store in URL for sharing
+  const url = new URL(window.location.href);
+  url.searchParams.set("season", season);
+  window.history.replaceState({}, "", url.toString());
+}
+
+function getSeasonFromURL(defaultSeason) {
+  const url = new URL(window.location.href);
+  return url.searchParams.get("season") || defaultSeason;
+}
+
+async function init() {
+  hideError();
+
+  try {
+    const res = await fetch(LEAGUE_CSV, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load ${LEAGUE_CSV} (${res.status})`);
+
+    const text = await res.text();
+    const { header, rows } = parseCSV(text);
+    const idx = idxMap(header);
+
+    const seasons = seasonsList(rows, idx);
+    if (!seasons.length) throw new Error("No seasons found in league.csv");
+
+    // Build dropdown
+    elSeasonSelect.innerHTML = "";
+    seasons.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = `Season ${s}`;
+      elSeasonSelect.appendChild(opt);
+    });
+
+    const defaultSeason = seasons[seasons.length - 1]; // latest
+    const selectedSeason = getSeasonFromURL(defaultSeason);
+
+    // Apply selection
+    elSeasonSelect.value = selectedSeason;
+    setSeasonUI(selectedSeason);
+
+    function renderSeason(season) {
+      setSeasonUI(season);
+
+      const filtered = rows.filter(r => String(r[idx.season]).trim() === String(season));
+      renderInsights(filtered, idx);
+      renderTable(filtered, idx);
     }
 
-    row.push(cur.trim());
-    if (row.some(v => v !== "")) rows.push(row);
-    return rows;
-  }
+    renderSeason(selectedSeason);
 
-  function getSeasons(data) {
-    const set = new Set();
-    data.forEach(r => set.add(String(r.Season)));
-    return [...set].map(Number).sort((a, b) => a - b).map(String);
-  }
-
-  function makeIndex(header) {
-    const norm = (s) => String(s || "").trim().toLowerCase();
-    const idx = {};
-    header.forEach((h, i) => { idx[norm(h)] = i; });
-    return idx;
-  }
-
-  function rowToObj(cols, idx) {
-    const get = (k) => {
-      const i = idx[k];
-      return i === undefined ? "" : (cols[i] ?? "");
-    };
-
-    // Accept common header variants
-    return {
-      Season: get("season"),
-      Pos: get("pos") || get("position"),
-      Player: get("player"),
-      P: get("p") || get("played") || get("games played"),
-      W: get("w") || get("wins"),
-      L: get("l") || get("losses"),
-      BF: get("bf") || get("balls for"),
-      BA: get("ba") || get("balls against"),
-      BD: get("bd") || get("ball difference"),
-      "7B": get("7b") || get("7-ballers") || get("7-ballers") || get("7 ballers"),
-      BP: get("bp") || get("bonus points") || get("bonus"),
-      PTS: get("pts") || get("league points (3 per win)") || get("league points") || get("points")
-    };
-  }
-
-  function pillClass(pos, total) {
-    const p = Number(pos);
-    if (!Number.isFinite(p)) return "pill";
-    if (p <= 5) return "pill pill-top";
-    if (p >= total - 1) return "pill pill-bot"; // bottom 2
-    return "pill";
-  }
-
-  function render(season, allRows) {
-    const rows = allRows
-      .filter(r => String(r.Season) === String(season))
-      .filter(r => r.Player && r.Pos)
-      .sort((a, b) => Number(a.Pos) - Number(b.Pos));
-
-    leagueBody.innerHTML = "";
-    leagueMeta.textContent = rows.length ? `Players: ${rows.length}` : "—";
-
-    seasonBadge.textContent = `Season: ${season}`;
-
-    rows.forEach((r) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td class="col-pos"><span class="${pillClass(r.Pos, rows.length)}">${r.Pos}</span></td>
-        <td class="col-player"><strong>${r.Player}</strong></td>
-        <td class="col-num">${r.P}</td>
-        <td class="col-num">${r.W}</td>
-        <td class="col-num">${r.L}</td>
-        <td class="col-num">${r.BF}</td>
-        <td class="col-num">${r.BA}</td>
-        <td class="col-num">${r.BD}</td>
-        <td class="col-num">${r["7B"]}</td>
-        <td class="col-num">${r.BP}</td>
-        <td class="col-num"><strong>${r.PTS}</strong></td>
-      `;
-      leagueBody.appendChild(tr);
+    elSeasonSelect.addEventListener("change", (e) => {
+      renderSeason(e.target.value);
     });
+
+  } catch (err) {
+    showError(`Couldn't load league table: ${err.message}`);
+    console.error(err);
   }
+}
 
-  function init() {
-    fetch(CSV_PATH, { cache: "no-store" })
-      .then(r => r.text())
-      .then(text => {
-        hideError();
-        const parsed = parseCSV(text.trim());
-        if (parsed.length < 2) throw new Error("league.csv has no data rows.");
-
-        const header = parsed[0];
-        const idx = makeIndex(header);
-
-        // hard requirement: Season must exist
-        if (idx["season"] === undefined) {
-          throw new Error("Missing column in league.csv: Season");
-        }
-
-        const allRows = parsed.slice(1).map(cols => rowToObj(cols, idx));
-
-        const seasons = getSeasons(allRows);
-        if (!seasons.length) throw new Error("No Season values found in league.csv.");
-
-        seasonSelect.innerHTML = "";
-        seasons.forEach(s => {
-          const opt = document.createElement("option");
-          opt.value = s;
-          opt.textContent = `Season ${s}`;
-          seasonSelect.appendChild(opt);
-        });
-
-        // default season = latest
-        const defaultSeason = seasons[seasons.length - 1];
-        seasonSelect.value = defaultSeason;
-        render(defaultSeason, allRows);
-
-        seasonSelect.addEventListener("change", (e) => {
-          render(e.target.value, allRows);
-        });
-      })
-      .catch(err => {
-        showError(`Couldn't load league table: ${err.message}`);
-      });
-  }
-
-  init();
-})();
+init();
