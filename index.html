@@ -2,54 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pima Poa — League Table</title>
+  <title>Pima Poa League</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root{
+      --bg:#0c0f14;
+      --card:#141922;
+      --head:#1b2130;
+      --row:#111624;
+      --text:#e6e8eb;
+      --muted:#9aa0a6;
+      --green:#18c964;
+      --red:#ff4d4d;
+      --chip: rgba(255,255,255,0.06);
+      --chipBorder: rgba(255,255,255,0.10);
+    }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% 10%, rgba(0,255,190,.08), transparent 60%),
+                  radial-gradient(900px 600px at 80% 30%, rgba(70,120,255,.10), transparent 55%),
+                  linear-gradient(180deg,#0b0e13,#0b1220);
+      font-family:Inter,system-ui;
+      color:var(--text);
+    }
+    .container{max-width:1100px;margin:auto;padding:24px;}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+    h1{margin:0;font-weight:800;letter-spacing:.5px;font-size:26px}
+    .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .chip{
+      padding:10px 12px;border-radius:999px;
+      background:var(--chip);border:1px solid var(--chipBorder);
+      color:var(--text);font-weight:700;font-size:13px;
+    }
+    select{
+      padding:10px 12px;border-radius:999px;
+      background:var(--chip);border:1px solid var(--chipBorder);
+      color:var(--text);font-weight:700;font-size:13px;
+      outline:none;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    thead{background:var(--head);}
+    th,td{padding:10px 8px;text-align:center;font-size:14px;}
+    th{
+      font-weight:700;color:var(--muted);letter-spacing:.6px;
+      font-size:12px;text-transform:uppercase
+    }
+    td.player{text-align:left;font-weight:700;}
+    tr:nth-child(even){background:rgba(255,255,255,0.02);}
+
+    .pos{
+      font-weight:900;border-radius:10px;padding:6px 0;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    .top5{
+      background:rgba(24,201,100,0.15);
+      border:1px solid rgba(24,201,100,0.25);
+      color:var(--green);
+      box-shadow: 0 0 18px rgba(24,201,100,0.10);
+    }
+    .bottom2{
+      background:rgba(255,77,77,0.15);
+      border:1px solid rgba(255,77,77,0.25);
+      color:var(--red);
+      box-shadow: 0 0 18px rgba(255,77,77,0.10);
+    }
+
+    .footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center;}
+
+    .error{
+      margin:14px 0;padding:12px 14px;border-radius:12px;
+      background: rgba(255,77,77,0.10);
+      border: 1px solid rgba(255,77,77,0.22);
+      color: #ffd7d7;
+      display:none;
+      white-space:pre-wrap;
+    }
+  </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">8</div>
-        <div class="titles">
-          <h1>Pima Poa League</h1>
-          <p class="sub">League Table</p>
-        </div>
+  <div class="container">
+    <div class="topbar">
+      <h1>🎱 Pima Poa League Table</h1>
+      <div class="right">
+        <div id="seasonBadge" class="chip">Season: —</div>
+        <select id="seasonSelect"></select>
       </div>
+    </div>
 
-      <nav class="nav">
-        <a class="tab active" href="./index.html">League</a>
-        <a class="tab" href="./fixtures.html">Fixtures</a>
-        <a class="tab" href="./ranking.html">Ranking</a>
-      </nav>
+    <div id="errBox" class="error"></div>
 
-      <div class="controls">
-        <select id="seasonSelect" class="select">
-          <option value="all">All Seasons</option>
-        </select>
-      </div>
-    </header>
+    <table id="league">
+      <thead>
+        <tr>
+          <th>POS</th><th>PLAYER</th><th>P</th><th>W</th><th>L</th>
+          <th>BF</th><th>BA</th><th>BD</th><th>7B</th><th>BP</th><th>PTS</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-    <div id="errorBox" class="error" style="display:none;"></div>
-
-    <section class="card">
-      <table class="table" id="leagueTable">
-        <thead>
-          <tr>
-            <th>Pos</th><th style="text-align:left;padding-left:12px;">Player</th>
-            <th>P</th><th>W</th><th>L</th>
-            <th>BF</th><th>BA</th><th>BD</th><th>7B</th><th>BP</th><th>PTS</th>
-          </tr>
-        </thead>
-        <tbody id="leagueBody"></tbody>
-      </table>
-      <div class="pageFooter">Auto-updated from <code>data/league.csv</code></div>
-    </section>
+    <div class="footer">Auto-updated from <strong>data/league.csv</strong></div>
   </div>
 
   <script src="js/league.js"></script>
