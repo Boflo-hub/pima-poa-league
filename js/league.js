@@ -1,140 +1,176 @@
-// js/league.js — Season switcher for data/league.csv
-// Expected header: Season,Pos,Player,P,W,L,BF,BA,BD,7B,BP,PTS
+(() => {
+  const CSV_PATH = "data/league.csv";
 
-const CSV_PATH = "data/league.csv";
+  const seasonSelect = document.getElementById("seasonSelect");
+  const seasonBadge = document.getElementById("seasonBadge");
+  const leagueBody = document.getElementById("leagueBody");
+  const leagueMeta = document.getElementById("leagueMeta");
+  const leagueError = document.getElementById("leagueError");
 
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const header = lines[0].split(",").map(s => s.trim());
-  const rows = lines.slice(1).map(line => line.split(",").map(s => (s ?? "").trim()));
-  return { header, rows };
-}
-
-function idxMap(header) {
-  const must = ["Season","Pos","Player","P","W","L","BF","BA","BD","7B","BP","PTS"];
-  const map = {};
-  for (const k of must) {
-    const i = header.indexOf(k);
-    if (i === -1) throw new Error(`Missing column in league.csv header: ${k}`);
-    map[k] = i;
-  }
-  return map;
-}
-
-function num(x){
-  const n = Number(String(x).replace(/[^\d\-\.]/g,""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-function showError(msg){
-  const box = document.getElementById("errBox");
-  if (!box) return;
-  box.textContent = msg;
-  box.style.display = "block";
-}
-function hideError(){
-  const box = document.getElementById("errBox");
-  if (!box) return;
-  box.style.display = "none";
-}
-
-function setSeasonBadge(season){
-  const badge = document.getElementById("seasonBadge");
-  if (badge) badge.textContent = `Season: ${season}`;
-}
-
-function renderTable(data){
-  const tbody = document.querySelector("#league tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-
-  // sort by position
-  data.sort((a,b) => a.Pos - b.Pos);
-
-  const total = data.length;
-
-  data.forEach(r => {
-    const tr = document.createElement("tr");
-
-    const posClass =
-      r.Pos <= 5 ? "top5" :
-      (total >= 2 && r.Pos >= total - 1) ? "bottom2" : "";
-
-    tr.innerHTML = `
-      <td class="pos ${posClass}">${r.Pos}</td>
-      <td class="player">${r.Player}</td>
-      <td>${r.P}</td>
-      <td>${r.W}</td>
-      <td>${r.L}</td>
-      <td>${r.BF}</td>
-      <td>${r.BA}</td>
-      <td>${r.BD}</td>
-      <td>${r["7B"]}</td>
-      <td>${r.BP}</td>
-      <td><strong>${r.PTS}</strong></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function boot(){
-  const res = await fetch(CSV_PATH, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Could not fetch ${CSV_PATH} (HTTP ${res.status})`);
-
-  const text = await res.text();
-  const { header, rows } = parseCSV(text);
-  const idx = idxMap(header);
-
-  // build full dataset
-  const all = rows
-    .map(cols => ({
-      Season: cols[idx.Season],
-      Pos: num(cols[idx.Pos]),
-      Player: cols[idx.Player],
-      P: num(cols[idx.P]),
-      W: num(cols[idx.W]),
-      L: num(cols[idx.L]),
-      BF: num(cols[idx.BF]),
-      BA: num(cols[idx.BA]),
-      BD: num(cols[idx.BD]),
-      "7B": num(cols[idx["7B"]]),
-      BP: num(cols[idx.BP]),
-      PTS: num(cols[idx.PTS]),
-    }))
-    .filter(r => r.Season && r.Player);
-
-  const seasons = [...new Set(all.map(r => r.Season))]
-    .sort((a,b) => num(a) - num(b));
-
-  const sel = document.getElementById("seasonSelect");
-  if (!sel) throw new Error("Missing #seasonSelect element in index.html");
-
-  // populate dropdown
-  sel.innerHTML = "";
-  seasons.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = `Season ${s}`;
-    sel.appendChild(opt);
-  });
-
-  // ✅ Default = Season 1 if present (since Season 1 is ongoing)
-  const defaultSeason = seasons.includes("1") ? "1" : (seasons[0] || "1");
-  sel.value = defaultSeason;
-
-  function apply(){
-    hideError();
-    const season = sel.value;
-    setSeasonBadge(season);
-    const data = all.filter(r => r.Season === season);
-    renderTable(data);
+  function showError(msg) {
+    leagueError.style.display = "block";
+    leagueError.textContent = msg;
   }
 
-  apply();
-  sel.addEventListener("change", apply);
-}
+  function hideError() {
+    leagueError.style.display = "none";
+    leagueError.textContent = "";
+  }
 
-boot().catch(err => {
-  console.error(err);
-  showError(err.message);
-});
+  // Simple CSV parser that handles quoted commas
+  function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let cur = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+
+      if (ch === '"' && next === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+
+      if (!inQuotes && (ch === ",")) {
+        row.push(cur.trim());
+        cur = "";
+        continue;
+      }
+
+      if (!inQuotes && (ch === "\n" || ch === "\r")) {
+        if (ch === "\r" && next === "\n") i++;
+        row.push(cur.trim());
+        cur = "";
+        if (row.some(v => v !== "")) rows.push(row);
+        row = [];
+        continue;
+      }
+
+      cur += ch;
+    }
+
+    row.push(cur.trim());
+    if (row.some(v => v !== "")) rows.push(row);
+    return rows;
+  }
+
+  function getSeasons(data) {
+    const set = new Set();
+    data.forEach(r => set.add(String(r.Season)));
+    return [...set].map(Number).sort((a, b) => a - b).map(String);
+  }
+
+  function makeIndex(header) {
+    const norm = (s) => String(s || "").trim().toLowerCase();
+    const idx = {};
+    header.forEach((h, i) => { idx[norm(h)] = i; });
+    return idx;
+  }
+
+  function rowToObj(cols, idx) {
+    const get = (k) => {
+      const i = idx[k];
+      return i === undefined ? "" : (cols[i] ?? "");
+    };
+
+    // Accept common header variants
+    return {
+      Season: get("season"),
+      Pos: get("pos") || get("position"),
+      Player: get("player"),
+      P: get("p") || get("played") || get("games played"),
+      W: get("w") || get("wins"),
+      L: get("l") || get("losses"),
+      BF: get("bf") || get("balls for"),
+      BA: get("ba") || get("balls against"),
+      BD: get("bd") || get("ball difference"),
+      "7B": get("7b") || get("7-ballers") || get("7-ballers") || get("7 ballers"),
+      BP: get("bp") || get("bonus points") || get("bonus"),
+      PTS: get("pts") || get("league points (3 per win)") || get("league points") || get("points")
+    };
+  }
+
+  function pillClass(pos, total) {
+    const p = Number(pos);
+    if (!Number.isFinite(p)) return "pill";
+    if (p <= 5) return "pill pill-top";
+    if (p >= total - 1) return "pill pill-bot"; // bottom 2
+    return "pill";
+  }
+
+  function render(season, allRows) {
+    const rows = allRows
+      .filter(r => String(r.Season) === String(season))
+      .filter(r => r.Player && r.Pos)
+      .sort((a, b) => Number(a.Pos) - Number(b.Pos));
+
+    leagueBody.innerHTML = "";
+    leagueMeta.textContent = rows.length ? `Players: ${rows.length}` : "—";
+
+    seasonBadge.textContent = `Season: ${season}`;
+
+    rows.forEach((r) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td class="col-pos"><span class="${pillClass(r.Pos, rows.length)}">${r.Pos}</span></td>
+        <td class="col-player"><strong>${r.Player}</strong></td>
+        <td class="col-num">${r.P}</td>
+        <td class="col-num">${r.W}</td>
+        <td class="col-num">${r.L}</td>
+        <td class="col-num">${r.BF}</td>
+        <td class="col-num">${r.BA}</td>
+        <td class="col-num">${r.BD}</td>
+        <td class="col-num">${r["7B"]}</td>
+        <td class="col-num">${r.BP}</td>
+        <td class="col-num"><strong>${r.PTS}</strong></td>
+      `;
+      leagueBody.appendChild(tr);
+    });
+  }
+
+  function init() {
+    fetch(CSV_PATH, { cache: "no-store" })
+      .then(r => r.text())
+      .then(text => {
+        hideError();
+        const parsed = parseCSV(text.trim());
+        if (parsed.length < 2) throw new Error("league.csv has no data rows.");
+
+        const header = parsed[0];
+        const idx = makeIndex(header);
+
+        // hard requirement: Season must exist
+        if (idx["season"] === undefined) {
+          throw new Error("Missing column in league.csv: Season");
+        }
+
+        const allRows = parsed.slice(1).map(cols => rowToObj(cols, idx));
+
+        const seasons = getSeasons(allRows);
+        if (!seasons.length) throw new Error("No Season values found in league.csv.");
+
+        seasonSelect.innerHTML = "";
+        seasons.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = `Season ${s}`;
+          seasonSelect.appendChild(opt);
+        });
+
+        // default season = latest
+        const defaultSeason = seasons[seasons.length - 1];
+        seasonSelect.value = defaultSeason;
+        render(defaultSeason, allRows);
+
+        seasonSelect.addEventListener("change", (e) => {
+          render(e.target.value, allRows);
+        });
+      })
+      .catch(err => {
+        showError(`Couldn't load league table: ${err.message}`);
+      });
+  }
+
+  init();
+})();
