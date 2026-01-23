@@ -297,3 +297,197 @@ a{color:inherit;text-decoration:none}
 @media (max-width: 560px){
   .grid{grid-template-columns: 1fr;}
 }
+/* ===== League page additions (Insights + Table helpers) ===== */
+.panel{
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(10,16,22,0.55);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+
+.panelHead{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom: 14px;
+}
+
+.panelTitle{
+  margin:0;
+  font-size: 24px;
+  letter-spacing: .2px;
+}
+
+.panelSub{
+  margin: 4px 0 0 0;
+  color: rgba(230,235,245,0.65);
+  font-size: 14px;
+}
+
+.miniLegend{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 13px;
+  color: rgba(230,235,245,0.8);
+}
+
+.pill .dot{
+  width:8px;height:8px;border-radius:50%;
+  background: rgba(255,255,255,0.6);
+}
+
+.pill.green .dot{ background: #19d38b; }
+.pill.red .dot{ background: #ff5563; }
+
+.insightsGrid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px){
+  .insightsGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px){
+  .insightsGrid{ grid-template-columns: 1fr; }
+}
+
+.insightCard{
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.insightCard.good{
+  box-shadow: inset 0 0 0 1px rgba(25,211,139,0.22);
+}
+
+.insightCard.warn{
+  box-shadow: inset 0 0 0 1px rgba(255,196,70,0.22);
+}
+
+.insightTitle{
+  color: rgba(230,235,245,0.70);
+  font-size: 13px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.insightValue{
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.insightSub{
+  margin-top: 4px;
+  color: rgba(230,235,245,0.60);
+  font-size: 13px;
+}
+
+.sparks{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px){
+  .sparks{ grid-template-columns: 1fr; }
+}
+
+.sparkCard{
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.sparkTitle{
+  font-size: 13px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(230,235,245,0.70);
+  margin-bottom: 10px;
+}
+
+.sparkRow{
+  display:grid;
+  grid-template-columns: 1fr 160px 48px;
+  gap: 10px;
+  align-items:center;
+  padding: 6px 0;
+}
+
+.sparkName{ color: rgba(230,235,245,0.9); font-weight: 600; }
+.sparkVal{ text-align:right; color: rgba(230,235,245,0.8); font-weight: 700; }
+
+.sparkBar{
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow:hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.sparkFill{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(25,211,139,0.95), rgba(66,185,255,0.65));
+}
+
+/* Table helpers (if your style.css doesn’t already have these) */
+.tableWrap{ overflow:auto; border-radius: 16px; }
+.table{ width:100%; border-collapse: collapse; }
+.table th, .table td{ padding: 12px 10px; text-align:center; }
+.table th{ color: rgba(230,235,245,0.6); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+.table td{ border-top: 1px solid rgba(255,255,255,0.06); }
+.table .left{ text-align:left; }
+.table .strong{ font-weight: 700; }
+
+.posCell{ width: 86px; }
+.posPill{
+  display:inline-flex;
+  min-width: 44px;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.posGreen{ background: rgba(25,211,139,0.16); color:#19d38b; border:1px solid rgba(25,211,139,0.20); }
+.posRed{ background: rgba(255,85,99,0.16); color:#ff5563; border:1px solid rgba(255,85,99,0.20); }
+.posGrey{ background: rgba(255,255,255,0.06); color: rgba(230,235,245,0.85); border:1px solid rgba(255,255,255,0.08); }
+
+.errorBox{
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255,85,99,0.12);
+  border: 1px solid rgba(255,85,99,0.28);
+  color: rgba(255,220,224,0.95);
+  font-weight: 600;
+}
+
+.footerNote{
+  margin: 16px 0 24px;
+  text-align:center;
+  color: rgba(230,235,245,0.45);
+  font-size: 13px;
+}
