@@ -1,8 +1,11 @@
-// fixtures.js — reads data/fixtures.csv
-// Expected header: Round,Player A,Player B,Played?,Winner
-// Also works if you add Season later.
+// js/fixtures.js — Season switcher + fixtures + H2H
+// Expected columns in data/fixtures.csv:
+// Season,Round,Player A,Player B,Played?,Winner
+// If Season column is missing, script treats everything as Season "1".
 
-fetch("data/fixtures.csv", { cache: "no-store" })
+const CSV_PATH = "data/fixtures.csv";
+
+fetch(CSV_PATH, { cache: "no-store" })
   .then(res => {
     if (!res.ok) throw new Error(`HTTP ${res.status} while loading fixtures.csv`);
     return res.text();
@@ -22,7 +25,6 @@ function showError(err) {
 }
 
 function parseCSV(text) {
-  // Simple CSV parser (assumes no quoted commas)
   const lines = text.trim().split(/\r?\n/);
   const header = lines[0].split(",").map(s => s.trim());
   const rows = lines.slice(1).map(line => line.split(",").map(v => (v ?? "").trim()));
@@ -30,7 +32,6 @@ function parseCSV(text) {
 }
 
 function idxOf(header, nameOptions) {
-  // nameOptions = ["Player A","PlayerA",...]
   for (const n of nameOptions) {
     const i = header.indexOf(n);
     if (i !== -1) return i;
@@ -42,6 +43,7 @@ function init(csv) {
   const { header, rows } = parseCSV(csv);
 
   const idx = {
+    season: idxOf(header, ["Season"]),
     round: idxOf(header, ["Round"]),
     a: idxOf(header, ["Player A", "PlayerA"]),
     b: idxOf(header, ["Player B", "PlayerB"]),
@@ -49,21 +51,24 @@ function init(csv) {
     winner: idxOf(header, ["Winner"])
   };
 
-  for (const [k, v] of Object.entries(idx)) {
-    if (v === -1) throw new Error(`Missing column in fixtures.csv: ${k}`);
+  if (idx.round === -1 || idx.a === -1 || idx.b === -1 || idx.played === -1 || idx.winner === -1) {
+    throw new Error("fixtures.csv is missing required columns. Need at least: Round, Player A, Player B, Played?, Winner");
   }
+
+  // DOM
+  const seasonSelect = document.getElementById("seasonSelect");
+  const seasonBadge = document.getElementById("seasonBadge");
 
   const pendingBody = document.getElementById("pendingBody");
   const playedBody = document.getElementById("playedBody");
 
   const roundSelect = document.getElementById("roundFilter");
-  const badge = document.getElementById("currentRoundBadge");
+  const currentRoundBadge = document.getElementById("currentRoundBadge");
   const playedBadge = document.getElementById("playedBadge");
 
   const pendingOnlyBtn = document.getElementById("pendingOnlyBtn");
   const currentRoundOnlyBtn = document.getElementById("currentRoundOnlyBtn");
 
-  // H2H
   const h2hA = document.getElementById("h2hA");
   const h2hB = document.getElementById("h2hB");
   const h2hSwap = document.getElementById("h2hSwap");
@@ -78,11 +83,12 @@ function init(csv) {
   const h2hAName = document.getElementById("h2hAName");
   const h2hBName = document.getElementById("h2hBName");
 
-  const fixtures = [];
-  const roundsSet = new Set();
-  const playersSet = new Set();
+  // Parse rows into objects
+  const all = [];
+  const seasonsSet = new Set();
 
   rows.forEach(cols => {
+    const season = (idx.season === -1 ? "1" : (cols[idx.season] || "1"));
     const round = cols[idx.round];
     const a = cols[idx.a];
     const b = cols[idx.b];
@@ -93,56 +99,29 @@ function init(csv) {
 
     const played = String(playedRaw).toUpperCase() === "YES";
 
-    roundsSet.add(round);
-    playersSet.add(a);
-    playersSet.add(b);
-
-    fixtures.push({ round: String(round), a, b, played, winner });
+    seasonsSet.add(season);
+    all.push({ season, round: String(round), a, b, played, winner });
   });
 
-  // Sort rounds numeric
-  const rounds = [...roundsSet].map(Number).sort((x, y) => x - y).map(String);
-
-  // Determine current round = first round that has any pending match
-  let currentRound = rounds[0] || "1";
-  for (const r of rounds) {
-    const hasPending = fixtures.some(f => f.round === r && !f.played);
-    if (hasPending) { currentRound = r; break; }
-  }
-  badge.textContent = `Current Round: ${currentRound}`;
-
-  // Populate round dropdown
-  rounds.forEach(r => {
+  // Build season dropdown
+  const seasons = [...seasonsSet].map(Number).sort((x,y)=>x-y).map(String);
+  seasonSelect.innerHTML = "";
+  seasons.forEach(s => {
     const opt = document.createElement("option");
-    opt.value = r;
-    opt.textContent = `Round ${r}`;
-    roundSelect.appendChild(opt);
+    opt.value = s;
+    opt.textContent = `Season ${s}`;
+    seasonSelect.appendChild(opt);
   });
 
-  // Played totals badge
-  const playedCount = fixtures.filter(f => f.played).length;
-  playedBadge.textContent = `Played: ${playedCount} / ${fixtures.length}`;
+  // Default Season = 1 if present
+  const defaultSeason = seasons.includes("1") ? "1" : (seasons[0] || "1");
+  seasonSelect.value = defaultSeason;
+  seasonBadge.textContent = `Season: ${defaultSeason}`;
 
-  // Populate players (H2H)
-  const players = [...playersSet].sort((x, y) => x.localeCompare(y));
-  players.forEach(p => {
-    const oa = document.createElement("option");
-    oa.value = p;
-    oa.textContent = p;
-    h2hA.appendChild(oa);
-
-    const ob = document.createElement("option");
-    ob.value = p;
-    ob.textContent = p;
-    h2hB.appendChild(ob);
-  });
-
-  // Filters state
-  let filterRound = currentRound;      // default = current round
+  // State
+  let filterRound = "all";
   let pendingOnly = false;
-  let currentOnly = true;
-
-  roundSelect.value = currentRound;
+  let currentOnly = false;
 
   function pill(played) {
     return played
@@ -150,76 +129,69 @@ function init(csv) {
       : `<span class="pill pendingPill"><span class="dot"></span>Pending</span>`;
   }
 
-  function renderMain() {
-    pendingBody.innerHTML = "";
-    playedBody.innerHTML = "";
+  function resetRoundDropdown(fixturesSeason) {
+    // rebuild rounds based on season
+    const roundsSet = new Set(fixturesSeason.map(f => f.round));
+    const rounds = [...roundsSet].map(Number).sort((a,b)=>a-b).map(String);
 
-    let list = fixtures.slice();
-
-    if (currentOnly) {
-      list = list.filter(f => f.round === currentRound);
-    } else if (filterRound !== "all") {
-      list = list.filter(f => f.round === filterRound);
+    // compute current round
+    let currentRound = rounds[0] || "1";
+    for (const r of rounds) {
+      const hasPending = fixturesSeason.some(f => f.round === r && !f.played);
+      if (hasPending) { currentRound = r; break; }
     }
+    currentRoundBadge.textContent = `Current Round: ${currentRound}`;
 
-    if (pendingOnly) {
-      list = list.filter(f => !f.played);
-    }
+    // Played badge
+    const playedCount = fixturesSeason.filter(f => f.played).length;
+    playedBadge.textContent = `Played: ${playedCount} / ${fixturesSeason.length}`;
 
-    const pending = list.filter(f => !f.played);
-    const played = list.filter(f => f.played);
-
-    // Pending table
-    pending.forEach(f => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>Round ${f.round}</td>
-        <td class="left"><span class="name">${f.a}</span></td>
-        <td class="mutedCenter">vs</td>
-        <td class="left"><span class="name">${f.b}</span></td>
-        <td>${pill(false)}</td>
-      `;
-      pendingBody.appendChild(tr);
+    // Round select
+    roundSelect.innerHTML = `<option value="all">All Rounds</option>`;
+    rounds.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = `Round ${r}`;
+      roundSelect.appendChild(opt);
     });
 
-    // Played table
-    played.forEach(f => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>Round ${f.round}</td>
-        <td class="left"><span class="name">${f.a}</span></td>
-        <td class="mutedCenter">—</td>
-        <td class="left"><span class="name">${f.b}</span></td>
-        <td class="mutedCenter">${f.winner || "—"}</td>
-        <td>${pill(true)}</td>
-      `;
-      playedBody.appendChild(tr);
-    });
+    // default view = current round (nice for live use)
+    filterRound = currentRound;
+    currentOnly = true;
+    roundSelect.value = currentRound;
+    currentRoundOnlyBtn.classList.add("active");
 
-    // Empty states
-    if (pending.length === 0) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="5" class="mutedCenter">No pending matches for this view.</td>`;
-      pendingBody.appendChild(tr);
-    }
-    if (played.length === 0) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="6" class="mutedCenter">No played matches for this view.</td>`;
-      playedBody.appendChild(tr);
-    }
+    return { rounds, currentRound };
   }
 
-  // -------- Head-to-Head ----------
+  function populatePlayers(fixturesSeason) {
+    const playersSet = new Set();
+    fixturesSeason.forEach(f => { playersSet.add(f.a); playersSet.add(f.b); });
+    const players = [...playersSet].sort((x,y)=>x.localeCompare(y));
+
+    h2hA.innerHTML = `<option value="" selected disabled>Player 1</option>`;
+    h2hB.innerHTML = `<option value="" selected disabled>Player 2</option>`;
+
+    players.forEach(p => {
+      const oa = document.createElement("option");
+      oa.value = p; oa.textContent = p;
+      h2hA.appendChild(oa);
+
+      const ob = document.createElement("option");
+      ob.value = p; ob.textContent = p;
+      h2hB.appendChild(ob);
+    });
+  }
+
   function samePair(f, p1, p2) {
     if (!p1 || !p2) return false;
     return (f.a === p1 && f.b === p2) || (f.a === p2 && f.b === p1);
   }
 
-  function renderH2H() {
+  function renderH2H(fixturesSeason) {
     const p1 = h2hA.value || "";
     const p2 = h2hB.value || "";
 
-    // not selected
     if (!p1 || !p2 || p1 === p2) {
       h2hBody.innerHTML = `<tr><td colspan="6" class="mutedCenter">Select two different players to view matches.</td></tr>`;
       h2hMatches.textContent = "—";
@@ -235,9 +207,9 @@ function init(csv) {
     h2hAName.textContent = `${p1} Wins`;
     h2hBName.textContent = `${p2} Wins`;
 
-    const h2h = fixtures
+    const h2h = fixturesSeason
       .filter(f => samePair(f, p1, p2))
-      .sort((x, y) => Number(x.round) - Number(y.round));
+      .sort((x,y)=>Number(x.round)-Number(y.round));
 
     const played = h2h.filter(f => f.played);
     const pending = h2h.filter(f => !f.played);
@@ -251,7 +223,7 @@ function init(csv) {
     h2hAWins.textContent = String(p1Wins);
     h2hBWins.textContent = String(p2Wins);
 
-    if (h2h.length === 0) {
+    if (!h2h.length) {
       h2hBody.innerHTML = `<tr><td colspan="6" class="mutedCenter">No fixtures found for ${p1} vs ${p2}.</td></tr>`;
       return;
     }
@@ -271,49 +243,108 @@ function init(csv) {
     });
   }
 
-  // Initial render
-  renderMain();
-  renderH2H();
+  function renderMain(fixturesSeason, currentRound) {
+    pendingBody.innerHTML = "";
+    playedBody.innerHTML = "";
 
-  // Events
-  roundSelect.addEventListener("change", e => {
-    filterRound = e.target.value;
-    currentOnly = false;
-    currentRoundOnlyBtn.classList.add("ghost");
-    renderMain();
-  });
+    let list = fixturesSeason.slice();
 
-  pendingOnlyBtn.addEventListener("click", () => {
-    pendingOnly = !pendingOnly;
-    pendingOnlyBtn.classList.toggle("active", pendingOnly);
-    renderMain();
-  });
+    if (currentOnly) list = list.filter(f => f.round === currentRound);
+    else if (filterRound !== "all") list = list.filter(f => f.round === filterRound);
 
-  currentRoundOnlyBtn.addEventListener("click", () => {
-    currentOnly = !currentOnly;
-    currentRoundOnlyBtn.classList.toggle("active", currentOnly);
-    if (currentOnly) {
-      roundSelect.value = currentRound;
-      filterRound = currentRound;
-    }
-    renderMain();
-  });
+    if (pendingOnly) list = list.filter(f => !f.played);
 
-  h2hA.addEventListener("change", renderH2H);
-  h2hB.addEventListener("change", renderH2H);
+    const pending = list.filter(f => !f.played);
+    const played = list.filter(f => f.played);
 
-  h2hSwap.addEventListener("click", () => {
-    const a = h2hA.value;
-    const b = h2hB.value;
-    if (!a && !b) return;
-    h2hA.value = b || "";
-    h2hB.value = a || "";
-    renderH2H();
-  });
+    pending.forEach(f => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>Round ${f.round}</td>
+        <td class="left"><span class="name">${f.a}</span></td>
+        <td class="mutedCenter">vs</td>
+        <td class="left"><span class="name">${f.b}</span></td>
+        <td>${pill(false)}</td>
+      `;
+      pendingBody.appendChild(tr);
+    });
 
-  h2hClear.addEventListener("click", () => {
+    played.forEach(f => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>Round ${f.round}</td>
+        <td class="left"><span class="name">${f.a}</span></td>
+        <td class="mutedCenter">—</td>
+        <td class="left"><span class="name">${f.b}</span></td>
+        <td class="mutedCenter">${f.winner || "—"}</td>
+        <td>${pill(true)}</td>
+      `;
+      playedBody.appendChild(tr);
+    });
+
+    if (!pending.length) pendingBody.innerHTML = `<tr><td colspan="5" class="mutedCenter">No pending matches for this view.</td></tr>`;
+    if (!played.length) playedBody.innerHTML = `<tr><td colspan="6" class="mutedCenter">No played matches for this view.</td></tr>`;
+  }
+
+  function applySeason() {
+    const season = seasonSelect.value;
+    seasonBadge.textContent = `Season: ${season}`;
+
+    const fixturesSeason = all.filter(f => f.season === season);
+
+    const { currentRound } = resetRoundDropdown(fixturesSeason);
+    populatePlayers(fixturesSeason);
+
+    // reset H2H
     h2hA.value = "";
     h2hB.value = "";
-    renderH2H();
-  });
+    renderH2H(fixturesSeason);
+
+    renderMain(fixturesSeason, currentRound);
+
+    // wiring events (depend on season)
+    roundSelect.onchange = (e) => {
+      filterRound = e.target.value;
+      currentOnly = false;
+      currentRoundOnlyBtn.classList.remove("active");
+      renderMain(fixturesSeason, currentRound);
+    };
+
+    pendingOnlyBtn.onclick = () => {
+      pendingOnly = !pendingOnly;
+      pendingOnlyBtn.classList.toggle("active", pendingOnly);
+      renderMain(fixturesSeason, currentRound);
+    };
+
+    currentRoundOnlyBtn.onclick = () => {
+      currentOnly = !currentOnly;
+      currentRoundOnlyBtn.classList.toggle("active", currentOnly);
+      if (currentOnly) {
+        filterRound = currentRound;
+        roundSelect.value = currentRound;
+      }
+      renderMain(fixturesSeason, currentRound);
+    };
+
+    h2hA.onchange = () => renderH2H(fixturesSeason);
+    h2hB.onchange = () => renderH2H(fixturesSeason);
+
+    h2hSwap.onclick = () => {
+      const a = h2hA.value;
+      const b = h2hB.value;
+      if (!a && !b) return;
+      h2hA.value = b || "";
+      h2hB.value = a || "";
+      renderH2H(fixturesSeason);
+    };
+
+    h2hClear.onclick = () => {
+      h2hA.value = "";
+      h2hB.value = "";
+      renderH2H(fixturesSeason);
+    };
+  }
+
+  seasonSelect.onchange = applySeason;
+  applySeason();
 }
