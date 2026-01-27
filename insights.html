@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pima Poa League — Insights</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">8</div>
+    <div>
+      <h1>Pima Poa League</h1>
+      <p class="sub">Insights</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <nav class="tabs" aria-label="Site navigation">
+      <a class="tab" href="index.html">League</a>
+      <a class="tab" href="fixtures.html">Fixtures</a>
+      <a class="tab" href="ranking.html">Ranking</a>
+      <a class="tab" href="player.html">Player</a>
+      <a class="tab active" href="insights.html">Insights</a>
+    </nav>
+
+    <div class="rightControls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect" class="select"></select>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="panel">
+    <div class="panelHead">
+      <div>
+        <h2 class="panelTitle">League Pulse</h2>
+        <p class="panelSub">Auto-computed from your CSVs</p>
+      </div>
+      <div class="miniMeta" id="pulseMeta">—</div>
+    </div>
+
+    <div class="cardsGrid" id="pulseCards"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panelHead">
+      <div>
+        <h2 class="panelTitle">Leaders</h2>
+        <p class="panelSub">Top stats this season</p>
+      </div>
+    </div>
+
+    <div class="cardsGrid" id="leadersCards"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panelHead">
+      <div>
+        <h2 class="panelTitle">Trends</h2>
+        <p class="panelSub">Form + rivalries</p>
+      </div>
+    </div>
+
+    <div class="twoCol">
+      <div class="miniPanel">
+        <div class="miniTitle">Hottest Form (last 5 played)</div>
+        <div id="formList" class="list"></div>
+      </div>
+
+      <div class="miniPanel">
+        <div class="miniTitle">Biggest Rivalry</div>
+        <div id="rivalBox" class="rival"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footerNote">Auto-updated from data/*.csv</div>
+</main>
+
+<script src="js/insights.js"></script>
+</body>
+</html>
