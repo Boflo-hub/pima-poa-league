@@ -709,3 +709,109 @@ button.clearBtn:hover{
     width:100%;
   }
 }
+/* ===== Insights page helpers ===== */
+.panel { margin-top: 18px; }
+.panelHead { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:12px; }
+.panelTitle { font-size: 22px; margin:0; }
+.panelSub { margin:0; opacity:.7; }
+
+.miniMeta { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.pill {
+  display:inline-flex; gap:8px; align-items:center;
+  padding:8px 10px; border-radius:999px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.cardsGrid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 980px){
+  .cardsGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 540px){
+  .cardsGrid{ grid-template-columns: 1fr; }
+}
+
+.statCard{
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.statCard .k{ font-size: 12px; letter-spacing: .12em; opacity:.75; text-transform: uppercase; }
+.statCard .v{ font-size: 22px; font-weight: 800; margin-top: 6px; }
+.statCard .s{ font-size: 12px; opacity:.7; margin-top: 4px; }
+
+.accentGreen{ border-color: rgba(0,255,170,.25); }
+.accentBlue{ border-color: rgba(80,160,255,.25); }
+.accentTeal{ border-color: rgba(0,220,255,.22); }
+.accentGold{ border-color: rgba(255,210,80,.22); }
+
+.twoCol{
+  display:grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 12px;
+}
+@media (max-width: 980px){
+  .twoCol{ grid-template-columns: 1fr; }
+}
+.miniPanel{
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.miniTitle{
+  font-weight: 800;
+  margin-bottom: 10px;
+  opacity: .9;
+}
+
+.list .rowLine{
+  display:flex; justify-content:space-between; gap:12px;
+  padding:10px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.list .rowLine:last-child{ border-bottom:none; }
+
+.chips{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.chip{
+  width:28px; height:26px;
+  border-radius: 10px;
+  display:grid; place-items:center;
+  font-weight: 800;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+.chipW{ border-color: rgba(0,255,170,.25); }
+.chipL{ border-color: rgba(255,90,120,.25); }
+
+.rivalTitle{ font-size: 18px; font-weight: 900; display:flex; gap:10px; align-items:center; }
+.rivalCount{ font-size: 30px; font-weight: 900; margin-top: 8px; }
+
+.plink{
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(0,255,170,.25);
+}
+.plink:hover{ border-bottom-color: rgba(0,255,170,.6); }
+
+.footerNote{
+  margin: 18px 0 30px;
+  opacity:.7;
+  text-align:center;
+  font-size: 12px;
+}
+
+.errorBanner{
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  background: rgba(255,70,70,.08);
+  border: 1px solid rgba(255,70,70,.25);
+}
+.muted{ opacity:.75; }
