@@ -591,3 +591,121 @@ a{color:inherit;text-decoration:none}
     width:100%;
   }
 }
+/* ========== Form controls (fix white dropdowns + default buttons) ========== */
+
+:root{
+  --ctl-bg: rgba(255,255,255,.06);
+  --ctl-bg2: rgba(255,255,255,.10);
+  --ctl-brd: rgba(255,255,255,.12);
+  --ctl-brd2: rgba(60,210,180,.35);
+  --ctl-text: rgba(255,255,255,.92);
+  --ctl-muted: rgba(255,255,255,.70);
+}
+
+select.select,
+select.h2hSelect,
+select.playerSelect,
+select.seasonSelect,
+.controls select,
+.h2h select,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  height: 36px;
+  padding: 0 36px 0 12px;
+  border-radius: 12px;
+
+  background: linear-gradient(180deg, var(--ctl-bg2), var(--ctl-bg));
+  border: 1px solid var(--ctl-brd);
+  color: var(--ctl-text);
+
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: .2px;
+  outline: none;
+
+  box-shadow: 0 10px 24px rgba(0,0,0,.25);
+  backdrop-filter: blur(10px);
+}
+
+/* dropdown arrow */
+select.select,
+select.h2hSelect,
+select.playerSelect,
+select.seasonSelect,
+.controls select,
+.h2h select,
+select{
+  background-image:
+    linear-gradient(180deg, var(--ctl-bg2), var(--ctl-bg)),
+    radial-gradient(circle at 75% 50%, rgba(80,255,210,.75), rgba(80,255,210,0) 55%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 18px 18px;
+  background-position: 0 0, calc(100% - 14px) 50%;
+}
+
+/* focus state */
+select:focus{
+  border-color: var(--ctl-brd2);
+  box-shadow: 0 0 0 3px rgba(60,210,180,.18), 0 14px 30px rgba(0,0,0,.35);
+}
+
+/* option list (limited styling support across browsers) */
+option{
+  background: #0c1118;
+  color: #ffffff;
+}
+
+/* Buttons (Swap / Clear) */
+button.btn,
+button.h2hBtn,
+.controls button,
+.h2h button,
+button {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--ctl-text);
+
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: .2px;
+
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+
+button:hover{
+  background: rgba(255,255,255,.10);
+  border-color: rgba(60,210,180,.25);
+  transform: translateY(-1px);
+}
+
+button:active{
+  transform: translateY(0px);
+}
+
+/* Optional: make "Clear" look slightly warning-ish without going red */
+button.btn-danger,
+button.clearBtn{
+  border-color: rgba(255, 200, 80, .35);
+}
+button.btn-danger:hover,
+button.clearBtn:hover{
+  background: rgba(255, 200, 80, .10);
+}
+
+/* H2H control row spacing */
+.h2hControls,
+.h2h .controlsRow,
+.h2h-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
