@@ -1,3 +1,116 @@
+/* =========================
+   ROUND SPOTLIGHT HELPERS
+========================= */
+function n(x){
+  const v = Number(String(x ?? "").trim());
+  return Number.isFinite(v) ? v : 0;
+}
+
+function pill(html){
+  return `<span class="pill">${html}</span>`;
+}
+
+function playerLink(season, player){
+  return `player.html?season=${encodeURIComponent(season)}&player=${encodeURIComponent(player)}`;
+}
+
+async function loadLeague7BBySeason(season){
+  const txt = await fetch("data/league.csv", { cache: "no-store" }).then(r => r.text());
+  const { header, rows } = parseCSV(txt);
+
+  const iSeason = idx(header, "Season");
+  const iPlayer = idx(header, "Player");
+  const i7B = idx(header, "7B");
+
+  const map = new Map();
+
+  rows.forEach(r => {
+    if (String(r[iSeason]) !== String(season)) return;
+    if (!r[iPlayer]) return;
+    map.set(r[iPlayer], n(r[i7B]));
+  });
+
+  return map;
+}
+
+async function renderSpotlight({ season, round, fixturesForRound, winnersForRound, league7BMap }){
+  const title = document.getElementById("spotlightTitle");
+  const meta = document.getElementById("spotlightMeta");
+
+  const mvpValue = document.getElementById("mvpValue");
+  const mvpSub = document.getElementById("mvpSub");
+  const bestWinValue = document.getElementById("bestWinValue");
+  const bestWinSub = document.getElementById("bestWinSub");
+  const sevenValue = document.getElementById("sevenValue");
+  const summaryValue = document.getElementById("summaryValue");
+  const summarySub = document.getElementById("summarySub");
+
+  if (!title) return; // safety
+
+  title.textContent = `Round ${round}`;
+
+  const total = fixturesForRound.length;
+  const played = fixturesForRound.filter(f => f.played).length;
+  const pending = total - played;
+
+  meta.innerHTML = [
+    pill(`Played <b>${played}</b> / <b>${total}</b>`),
+    pill(`Pending <b>${pending}</b>`),
+    pill(`Season <b>${season}</b>`)
+  ].join("");
+
+  // MVP (wins in round → 7B tiebreak)
+  const winCount = new Map();
+  winnersForRound.forEach(w => {
+    if (!w) return;
+    winCount.set(w, (winCount.get(w) || 0) + 1);
+  });
+
+  let mvp = null;
+  for (const [p, wc] of winCount.entries()){
+    const seven = league7BMap.get(p) ?? 0;
+    const cand = { p, wc, seven };
+    if (!mvp ||
+        cand.wc > mvp.wc ||
+        (cand.wc === mvp.wc && cand.seven > mvp.seven)) {
+      mvp = cand;
+    }
+  }
+
+  if (mvp){
+    mvpValue.innerHTML = `<a class="plink" href="${playerLink(season, mvp.p)}">${mvp.p}</a>`;
+    mvpSub.textContent = `${mvp.wc} win(s) • ${mvp.seven} season 7B`;
+  } else {
+    mvpValue.textContent = "—";
+    mvpSub.textContent = "No played games";
+  }
+
+  // Best Win = latest played match
+  const latest = [...fixturesForRound].filter(f => f.played).slice(-1)[0];
+  if (latest){
+    const opp = latest.winner === latest.a ? latest.b : latest.a;
+    bestWinValue.innerHTML =
+      `<a class="plink" href="${playerLink(season, latest.winner)}">${latest.winner}</a> over ${opp}`;
+    bestWinSub.textContent = "Latest completed match";
+  } else {
+    bestWinValue.textContent = "—";
+    bestWinSub.textContent = "No played games";
+  }
+
+  // Top 7B (season)
+  let top7 = { p: null, v: -1 };
+  for (const [p, v] of league7BMap.entries()){
+    if (v > top7.v) top7 = { p, v };
+  }
+
+  sevenValue.textContent = top7.p ? `${top7.p} • ${top7.v}` : "—";
+
+  summaryValue.textContent = `${played}/${total}`;
+  summarySub.textContent = pending
+    ? `${pending} match(es) pending`
+    : `Round ${round} complete`;
+}
+
 (() => {
   const CSV_PATH = "data/fixtures.csv";
 
@@ -273,6 +386,32 @@
           if (currentRoundBadge) currentRoundBadge.textContent = `Current Round: ${currentRound}`;
           setPlayedBadge(fixtures, season);
 
+          // ===== Round Spotlight (SAFE INSERT) =====
+          (async () => {
+            try {
+              const league7BMap = await loadLeague7BBySeason(season);
+          
+              const fixturesForRound = fixtures.filter(
+                f => String(f.season) === String(season) && String(f.round) === String(currentRound)
+              );
+          
+              const winnersForRound = fixturesForRound
+                .filter(f => f.played)
+                .map(f => f.winner)
+                .filter(Boolean);
+          
+              await renderSpotlight({
+                season,
+                round: currentRound,
+                fixturesForRound,
+                winnersForRound,
+                league7BMap
+              });
+            } catch (e) {
+              console.warn("Spotlight failed:", e);
+            }
+          })();
+          
           const roundVal = roundFilter.value || "all";
           render(fixtures, season, roundVal, pendingOnly, currentRoundOnly, currentRound);
         }
@@ -288,6 +427,32 @@
         roundFilter.value = initialCurrentRound;
         render(fixtures, defaultSeason, initialCurrentRound, false, false, initialCurrentRound);
 
+        // ===== Round Spotlight (initial load) =====
+        (async () => {
+          try {
+            const league7BMap = await loadLeague7BBySeason(defaultSeason);
+        
+            const fixturesForRound = fixtures.filter(
+              f => String(f.season) === String(defaultSeason) && String(f.round) === String(initialCurrentRound)
+            );
+        
+            const winnersForRound = fixturesForRound
+              .filter(f => f.played)
+              .map(f => f.winner)
+              .filter(Boolean);
+        
+            await renderSpotlight({
+              season: defaultSeason,
+              round: initialCurrentRound,
+              fixturesForRound,
+              winnersForRound,
+              league7BMap
+            });
+          } catch (e) {
+            console.warn("Spotlight failed:", e);
+          }
+        })();
+        
         // events
         seasonSelect.addEventListener("change", () => {
           const s = seasonSelect.value;
