@@ -88,6 +88,121 @@
     return Number.isFinite(v) ? v : 0;
   };
 
+  function rand01() {
+    return Math.random();
+}
+
+  function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
+}
+
+// strength from win rate (smoothed)
+  function strengthFromWL(wins, played) {
+  // Laplace smoothing prevents extreme 0/100% early
+    return (wins + 1) / (played + 2);
+}
+
+// probability A beats B
+  function winProb(aStr, bStr) {
+  // simple ratio, stable + intuitive
+    const p = aStr / (aStr + bStr);
+    return clamp(p, 0.15, 0.85); // prevent absurd certainty
+}
+
+// sort standings: pts desc, then name asc (stable)
+  function sortStandings(arr) {
+    arr.sort((x, y) => (y.pts - x.pts) || x.player.localeCompare(y.player));
+}
+
+// Monte Carlo simulator
+  function simulateSeason({ leagueRows, remainingFixtures, sims }) {
+  // base state
+    const players = leagueRows.map(r => r.player);
+    const base = new Map();
+    leagueRows.forEach(r => {
+      base.set(r.player, { pts: r.pts, wins: r.wins, played: r.p, pos: r.pos });
+  });
+
+  // results accumulators
+    const winTitle = new Map(players.map(p => [p, 0]));
+    const top5 = new Map(players.map(p => [p, 0]));
+    const bottom2 = new Map(players.map(p => [p, 0]));
+    const sumPts = new Map(players.map(p => [p, 0]));
+    const sumPos = new Map(players.map(p => [p, 0]));
+
+  // precompute strengths from current record
+    const baseStrength = new Map();
+    players.forEach(p => {
+      const st = base.get(p);
+      baseStrength.set(p, strengthFromWL(st.wins, st.played));
+  });
+
+    for (let s = 0; s < sims; s++) {
+    // clone state
+      const state = new Map();
+      players.forEach(p => {
+      const b = base.get(p);
+      state.set(p, { pts: b.pts, wins: b.wins, played: b.played });
+    });
+
+    // simulate remaining matches
+      for (const m of remainingFixtures) {
+        const a = m.a, b = m.b;
+        if (!state.has(a) || !state.has(b)) continue;
+
+      // small dynamic adjustment as season progresses
+        const aSt = state.get(a);
+        const bSt = state.get(b);
+
+        const aStrength = strengthFromWL(aSt.wins, aSt.played);
+        const bStrength = strengthFromWL(bSt.wins, bSt.played);
+
+      // blend current simulated strength with base
+        const A = 0.6 * aStrength + 0.4 * (baseStrength.get(a) ?? aStrength);
+        const B = 0.6 * bStrength + 0.4 * (baseStrength.get(b) ?? bStrength);
+
+        const pA = winProb(A, B);
+        const aWins = rand01() < pA;
+
+      // update played
+        aSt.played += 1;
+        bSt.played += 1;
+
+      // update result
+        if (aWins) {
+          aSt.wins += 1;
+          aSt.pts += 3;
+      } else {
+          bSt.wins += 1;
+          bSt.pts += 3;
+      }
+    }
+
+    // compute final table
+    const final = players.map(p => ({ player: p, pts: state.get(p).pts }));
+    sortStandings(final);
+
+    // assign finishing positions
+    const posMap = new Map();
+    final.forEach((row, i) => posMap.set(row.player, i + 1));
+
+    // outcomes
+      const champ = final[0].player;
+      winTitle.set(champ, winTitle.get(champ) + 1);
+
+      final.slice(0, 5).forEach(r => top5.set(r.player, top5.get(r.player) + 1));
+      final.slice(-2).forEach(r => bottom2.set(r.player, bottom2.get(r.player) + 1));
+
+    // aggregates
+      players.forEach(p => {
+        sumPts.set(p, sumPts.get(p) + state.get(p).pts);
+        sumPos.set(p, sumPos.get(p) + (posMap.get(p) || players.length));
+    });
+  }
+
+    return { winTitle, top5, bottom2, sumPts, sumPos, sims };
+}
+  
   function playerLink(season, player){
     return `player.html?season=${encodeURIComponent(season)}&player=${encodeURIComponent(player)}`;
   }
@@ -513,6 +628,59 @@
         }
       }
 
+      function renderPredictorTable({ leagueRows, simResult }) {
+        const body = document.getElementById("predictorBody");
+        const meta = document.getElementById("predMeta");
+        if (!body) return;
+
+        const sims = simResult.sims;
+
+  // compute expected pts + projected pos
+        const rows = leagueRows.map(r => {
+          const p = r.player;
+          const titlePct = (simResult.winTitle.get(p) / sims) * 100;
+          const top5Pct = (simResult.top5.get(p) / sims) * 100;
+          const bottom2Pct = (simResult.bottom2.get(p) / sims) * 100;
+          const expPts = simResult.sumPts.get(p) / sims;
+          const expPos = simResult.sumPos.get(p) / sims;
+
+    return {
+      pos: r.pos,
+      player: r.player,
+      pts: r.pts,
+      titlePct,
+      top5Pct,
+      bottom2Pct,
+      expPts,
+      expPos
+    };
+  });
+
+  // sort by projected position primarily, then expected points
+  rows.sort((a,b) => (a.expPos - b.expPos) || (b.expPts - a.expPts));
+
+  if (meta) meta.textContent = `Sims: ${sims.toLocaleString()} • Players: ${rows.length}`;
+
+  body.innerHTML = "";
+  rows.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-num">${r.pos}</td>
+      <td class="col-player">
+        <a class="plink" href="player.html?season=${encodeURIComponent(document.getElementById("seasonSelect")?.value || "")}&player=${encodeURIComponent(r.player)}">
+          <strong>${esc(r.player)}</strong>
+        </a>
+      </td>
+      <td class="col-num"><strong>${r.pts}</strong></td>
+      <td class="col-num">${r.titlePct.toFixed(1)}%</td>
+      <td class="col-num">${r.top5Pct.toFixed(1)}%</td>
+      <td class="col-num">${r.bottom2Pct.toFixed(1)}%</td>
+      <td class="col-num">${r.expPts.toFixed(1)}</td>
+      <td class="col-num">${r.expPos.toFixed(1)}</td>
+    `;
+    body.appendChild(tr);
+  });
+}   
       // initial
       const { current } = await populateRounds(defaultSeason);
       roundBadge.textContent = `Round: ${current}`;
