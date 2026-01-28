@@ -1,6 +1,7 @@
 /* =========================
    ROUND SPOTLIGHT HELPERS
 ========================= */
+
 function n(x){
   const v = Number(String(x ?? "").trim());
   return Number.isFinite(v) ? v : 0;
@@ -14,20 +15,79 @@ function playerLink(season, player){
   return `player.html?season=${encodeURIComponent(season)}&player=${encodeURIComponent(player)}`;
 }
 
+// Robust CSV parser (same approach as your IIFE parser)
+function parseCSVRows(text) {
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (ch === '"' && next === '"') { cur += '"'; i++; continue; }
+    if (ch === '"') { inQuotes = !inQuotes; continue; }
+
+    if (!inQuotes && ch === ",") {
+      row.push(cur.trim());
+      cur = "";
+      continue;
+    }
+
+    if (!inQuotes && (ch === "\n" || ch === "\r")) {
+      if (ch === "\r" && next === "\n") i++;
+      row.push(cur.trim());
+      cur = "";
+      if (row.some(v => v !== "")) rows.push(row);
+      row = [];
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  row.push(cur.trim());
+  if (row.some(v => v !== "")) rows.push(row);
+  return rows;
+}
+
+const normSpot = (s) =>
+  String(s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+function makeIndexSpot(header) {
+  const idx = {};
+  header.forEach((h, i) => (idx[normSpot(h)] = i));
+  return idx;
+}
+
 async function loadLeague7BBySeason(season){
   const txt = await fetch("data/league.csv", { cache: "no-store" }).then(r => r.text());
-  const { header, rows } = parseCSV(txt);
+  const parsed = parseCSVRows(txt.trim());
+  if (parsed.length < 2) return new Map();
 
-  const iSeason = idx(header, "Season");
-  const iPlayer = idx(header, "Player");
-  const i7B = idx(header, "7B");
+  const header = parsed[0];
+  const idx = makeIndexSpot(header);
+
+  const iSeason = idx[normSpot("Season")];
+  const iPlayer = idx[normSpot("Player")];
+  const i7B = idx[normSpot("7B")];
+
+  // if any missing, return empty map safely
+  if (iSeason === undefined || iPlayer === undefined || i7B === undefined) {
+    console.warn("league.csv missing Season/Player/7B columns for spotlight.");
+    return new Map();
+  }
 
   const map = new Map();
-
-  rows.forEach(r => {
+  parsed.slice(1).forEach(r => {
     if (String(r[iSeason]) !== String(season)) return;
-    if (!r[iPlayer]) return;
-    map.set(r[iPlayer], n(r[i7B]));
+    const p = r[iPlayer];
+    if (!p) return;
+    map.set(p, n(r[i7B]));
   });
 
   return map;
@@ -45,7 +105,7 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
   const summaryValue = document.getElementById("summaryValue");
   const summarySub = document.getElementById("summarySub");
 
-  if (!title) return; // safety
+  if (!title || !meta) return;
 
   title.textContent = `Round ${round}`;
 
@@ -59,7 +119,7 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
     pill(`Season <b>${season}</b>`)
   ].join("");
 
-  // MVP (wins in round → 7B tiebreak)
+  // MVP = most wins this round, tie-break by season 7B
   const winCount = new Map();
   winnersForRound.forEach(w => {
     if (!w) return;
@@ -72,7 +132,8 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
     const cand = { p, wc, seven };
     if (!mvp ||
         cand.wc > mvp.wc ||
-        (cand.wc === mvp.wc && cand.seven > mvp.seven)) {
+        (cand.wc === mvp.wc && cand.seven > mvp.seven) ||
+        (cand.wc === mvp.wc && cand.seven === mvp.seven && cand.p.localeCompare(mvp.p) < 0)) {
       mvp = cand;
     }
   }
@@ -82,33 +143,29 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
     mvpSub.textContent = `${mvp.wc} win(s) • ${mvp.seven} season 7B`;
   } else {
     mvpValue.textContent = "—";
-    mvpSub.textContent = "No played games";
+    mvpSub.textContent = "No played games this round";
   }
 
-  // Best Win = latest played match
-  const latest = [...fixturesForRound].filter(f => f.played).slice(-1)[0];
-  if (latest){
+  // Best win (for now) = latest played match
+  const latest = fixturesForRound.filter(f => f.played).slice(-1)[0];
+  if (latest && latest.winner){
     const opp = latest.winner === latest.a ? latest.b : latest.a;
-    bestWinValue.innerHTML =
-      `<a class="plink" href="${playerLink(season, latest.winner)}">${latest.winner}</a> over ${opp}`;
+    bestWinValue.innerHTML = `<a class="plink" href="${playerLink(season, latest.winner)}">${latest.winner}</a> over ${opp}`;
     bestWinSub.textContent = "Latest completed match";
   } else {
     bestWinValue.textContent = "—";
-    bestWinSub.textContent = "No played games";
+    bestWinSub.textContent = "No played games this round";
   }
 
-  // Top 7B (season)
+  // Top season 7B leader
   let top7 = { p: null, v: -1 };
   for (const [p, v] of league7BMap.entries()){
     if (v > top7.v) top7 = { p, v };
   }
-
   sevenValue.textContent = top7.p ? `${top7.p} • ${top7.v}` : "—";
 
   summaryValue.textContent = `${played}/${total}`;
-  summarySub.textContent = pending
-    ? `${pending} match(es) pending`
-    : `Round ${round} complete`;
+  summarySub.textContent = pending ? `${pending} match(es) pending` : `Round ${round} complete`;
 }
 
 (() => {
