@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pima Poa League — Power Rankings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Power Rankings</h1>
+        <p class="sub">Pima Poa Pool League</p>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Site navigation">
+      <a class="tab" href="index.html">League</a>
+      <a class="tab" href="fixtures.html">Fixtures</a>
+      <a class="tab" href="ranking.html">Ranking</a>
+      <a class="tab active" href="power.html">Power</a>
+      <a class="tab" href="player.html">Player</a>
+    </nav>
+
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect" class="select"></select>
+
+      <div id="roundBadge" class="badge">Round: —</div>
+      <select id="roundSelect" class="select"></select>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="powerError" class="error" style="display:none;"></div>
+
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Power Rankings</div>
+        <div class="cardmeta">
+          <span class="tag">Auto</span>
+          <span class="tag tag-ok" id="metaTag">—</span>
+        </div>
+      </div>
+
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th class="col-player">PLAYER</th>
+              <th class="col-num">MOVE</th>
+              <th class="col-num">POWER</th>
+              <th class="col-num">LAST 5</th>
+              <th class="col-num">STREAK</th>
+              <th class="col-num">ROUND</th>
+              <th class="col-num">WHY</th>
+            </tr>
+          </thead>
+          <tbody id="powerBody"></tbody>
+        </table>
+      </div>
+
+      <p class="footer">Auto-updated from <code>data/fixtures.csv</code> (+ <code>data/league.csv</code> if present)</p>
+    </section>
+  </main>
+
+  <script src="js/power.js"></script>
+</body>
+</html>
