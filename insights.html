@@ -96,7 +96,7 @@
           <div class="v" id="gapMid">—</div>
           <div class="s" id="gapMidSub">3rd to 6th</div>
         </div>
-
+        
         <div class="spotCard">
           <div class="k">⚠️ Bottom danger gap</div>
           <div class="v" id="gapBottom">—</div>
@@ -111,6 +111,52 @@
       </div>
     </section>
 
+    <section class="card" id="predictorCard">
+      <div class="cardhead">
+        <div class="cardtitle">Predictor</div>
+        <div class="cardmeta">
+          <span class="tag">Monte Carlo</span>
+        </div>
+      </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+    <div class="badge" id="predMeta">—</div>
+
+    <label class="badge" style="display:flex; gap:8px; align-items:center;">
+      Sims:
+      <select id="simSelect" class="select">
+        <option value="2000">2000</option>
+        <option value="5000" selected>5000</option>
+        <option value="10000">10000</option>
+      </select>
+    </label>
+
+    <button id="runPredictorBtn" class="btn">Run predictor</button>
+  </div>
+
+  <div class="tablewrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="col-num">POS</th>
+          <th class="col-player">PLAYER</th>
+          <th class="col-num">PTS</th>
+          <th class="col-num">TITLE %</th>
+          <th class="col-num">TOP 5 %</th>
+          <th class="col-num">BOTTOM 2 %</th>
+          <th class="col-num">EXP PTS</th>
+          <th class="col-num">PROJ POS</th>
+        </tr>
+      </thead>
+      <tbody id="predictorBody"></tbody>
+    </table>
+  </div>
+
+  <p class="footer">
+    Uses remaining matches from <code>data/fixtures.csv</code> (Played?=NO) and current table from <code>data/league.csv</code>.
+  </p>
+</section>
+    
     <!-- ROUND BY ROUND PROGRESS -->
     <section class="card">
       <div class="cardhead">
