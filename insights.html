@@ -2,93 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pima Poa League — Insights</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-
-<header class="top">
-  <div class="brand">
-    <div class="logo">8</div>
-    <div>
-      <h1>Pima Poa League</h1>
-      <p class="sub">Insights</p>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Insights</h1>
+        <p class="sub">League trends & analytics</p>
+      </div>
     </div>
-  </div>
 
-  <div class="controls">
     <nav class="tabs" aria-label="Site navigation">
       <a class="tab" href="index.html">League</a>
       <a class="tab" href="fixtures.html">Fixtures</a>
       <a class="tab" href="ranking.html">Ranking</a>
+      <a class="tab" href="power.html">Power</a>
       <a class="tab" href="player.html">Player</a>
       <a class="tab active" href="insights.html">Insights</a>
-      <a class="tab" href="power.html">Power</a>
     </nav>
 
-    <div class="rightControls">
+    <div class="controls">
       <div id="seasonBadge" class="badge">Season: —</div>
       <select id="seasonSelect" class="select"></select>
+
+      <div id="roundBadge" class="badge">Round: —</div>
+      <select id="roundSelect" class="select"></select>
     </div>
-  </div>
-</header>
+  </header>
 
-<main class="wrap">
+  <main class="wrap">
+    <div id="insightsError" class="error" style="display:none;"></div>
 
-  <section class="panel">
-    <div class="panelHead">
-      <div>
-        <h2 class="panelTitle">League Pulse</h2>
-        <p class="panelSub">Auto-computed from your CSVs</p>
-      </div>
-      <div class="miniMeta" id="pulseMeta">—</div>
-    </div>
-
-    <div class="cardsGrid" id="pulseCards"></div>
-  </section>
-
-  <section class="panel">
-    <div class="panelHead">
-      <div>
-        <h2 class="panelTitle">Leaders</h2>
-        <p class="panelSub">Top stats this season</p>
-      </div>
-    </div>
-
-    <div class="cardsGrid" id="leadersCards"></div>
-  </section>
-
-  <section class="panel">
-    <div class="panelHead">
-      <div>
-        <h2 class="panelTitle">Trends</h2>
-        <p class="panelSub">Form + rivalries</p>
-      </div>
-    </div>
-
-    <div class="twoCol">
-      <div class="miniPanel">
-        <div class="miniTitle">Hottest Form (last 5 played)</div>
-        <div id="formList" class="list"></div>
+    <!-- TOP KPI ROW -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">League pulse</div>
+        <div class="cardmeta"><span class="tag" id="pulseTag">—</span></div>
       </div>
 
-      <div class="miniPanel">
-        <div class="miniTitle">Biggest Rivalry</div>
-        <div id="rivalBox" class="rival"></div>
+      <div class="spotlightGrid">
+        <div class="spotCard">
+          <div class="k">✅ Completion</div>
+          <div class="v" id="kpiCompletion">—</div>
+          <div class="s" id="kpiCompletionSub">—</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🏁 Current Round</div>
+          <div class="v" id="kpiCurrentRound">—</div>
+          <div class="s" id="kpiCurrentRoundSub">—</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🔥 Hottest (last 5)</div>
+          <div class="v" id="kpiHot">—</div>
+          <div class="s" id="kpiHotSub">—</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🧊 Coldest (last 5)</div>
+          <div class="v" id="kpiCold">—</div>
+          <div class="s" id="kpiColdSub">—</div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <div class="footerNote">Auto-updated from data/*.csv</div>
-</main>
+    <!-- COMPETITIVENESS -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Competitiveness</div>
+        <div class="cardmeta"><span class="tag">points gaps</span></div>
+      </div>
 
-<script src="js/insights.js"></script>
+      <div class="spotlightGrid">
+        <div class="spotCard">
+          <div class="k">🥇 Title race gap</div>
+          <div class="v" id="gapTitle">—</div>
+          <div class="s" id="gapTitleSub">1st vs 2nd</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🧱 Mid-table spread</div>
+          <div class="v" id="gapMid">—</div>
+          <div class="s" id="gapMidSub">3rd to 6th</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">⚠️ Bottom danger gap</div>
+          <div class="v" id="gapBottom">—</div>
+          <div class="s" id="gapBottomSub">7th vs 8th</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🎯 Bonus activity</div>
+          <div class="v" id="bonusActivity">—</div>
+          <div class="s" id="bonusActivitySub">7B + BP totals</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROUND BY ROUND PROGRESS -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Round progress</div>
+        <div class="cardmeta"><span class="tag">played / total</span></div>
+      </div>
+
+      <div id="roundProgressList"></div>
+    </section>
+
+    <!-- UPSETS -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Upsets</div>
+        <div class="cardmeta"><span class="tag">lower pos beat higher pos</span></div>
+      </div>
+
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="col-num">RD</th>
+              <th class="col-player">WINNER</th>
+              <th class="col-player">LOSER</th>
+              <th class="col-num">POS Δ</th>
+              <th class="col-num">STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="upsetsBody"></tbody>
+        </table>
+      </div>
+      <p class="footer">Upsets use league positions from <code>data/league.csv</code></p>
+    </section>
+
+    <!-- WHAT CHANGED THIS ROUND -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">This round (selected)</div>
+        <div class="cardmeta"><span class="tag" id="roundTag">—</span></div>
+      </div>
+
+      <div class="spotlightGrid">
+        <div class="spotCard">
+          <div class="k">🏆 Round MVP</div>
+          <div class="v" id="roundMvp">—</div>
+          <div class="s" id="roundMvpSub">most wins (tie → 7B)</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">✅ Round record</div>
+          <div class="v" id="roundRecord">—</div>
+          <div class="s" id="roundRecordSub">played / total</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">📌 Most pending</div>
+          <div class="v" id="roundPending">—</div>
+          <div class="s" id="roundPendingSub">players with pending matches</div>
+        </div>
+
+        <div class="spotCard">
+          <div class="k">🧨 Surprise</div>
+          <div class="v" id="roundSurprise">—</div>
+          <div class="s" id="roundSurpriseSub">biggest pos upset</div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">Auto-updated from <code>data/fixtures.csv</code> + <code>data/league.csv</code></p>
+  </main>
+
+  <script src="js/insights.js"></script>
 </body>
 </html>
