@@ -454,7 +454,7 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
           
               const winnersForRound = fixturesForRound
                 .filter(f => f.played)
-                .map(f => f.winner)
+                .map(f => (f.winner || "").trim())
                 .filter(Boolean);
           
               await renderSpotlight({
@@ -495,7 +495,7 @@ async function renderSpotlight({ season, round, fixturesForRound, winnersForRoun
         
             const winnersForRound = fixturesForRound
               .filter(f => f.played)
-              .map(f => f.winner)
+              .map(f => (f.winner || "").trim())
               .filter(Boolean);
         
             await renderSpotlight({
