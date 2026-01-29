@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pima Poa League — Data Validation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">8</div>
+      <div>
+        <h1>Data Validation</h1>
+        <p class="sub">Checks league, fixtures & ranking CSVs</p>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Site navigation">
+      <a class="tab" href="index.html">League</a>
+      <a class="tab" href="fixtures.html">Fixtures</a>
+      <a class="tab" href="ranking.html">Ranking</a>
+      <a class="tab" href="player.html">Player</a>
+      <a class="tab" href="insights.html">Insights</a>
+      <a class="tab active" href="validate.html">Validate</a>
+    </nav>
+
+    <div class="controls">
+      <div id="seasonBadge" class="badge">Season: —</div>
+      <select id="seasonSelect" class="select"></select>
+      <button id="runBtn" class="btn">Run checks</button>
+      <button id="copyBtn" class="btn btn-ghost">Copy report</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="validateError" class="error" style="display:none;"></div>
+
+    <!-- Summary KPIs -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Summary</div>
+        <div class="cardmeta"><span id="runMeta" class="tag">—</span></div>
+      </div>
+
+      <div class="kpiGrid">
+        <div class="kpi">
+          <div class="k">Errors</div>
+          <div class="v" id="kpiErrors">—</div>
+          <div class="s" id="kpiErrorsSub">Blocking issues</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Warnings</div>
+          <div class="v" id="kpiWarnings">—</div>
+          <div class="s" id="kpiWarningsSub">Non-blocking</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Players</div>
+          <div class="v" id="kpiPlayers">—</div>
+          <div class="s">In this season</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Fixtures</div>
+          <div class="v" id="kpiFixtures">—</div>
+          <div class="s">In this season</div>
+        </div>
+      </div>
+
+      <p class="footer">Auto-checks <code>data/league.csv</code>, <code>data/fixtures.csv</code>, <code>data/ranking.csv</code></p>
+    </section>
+
+    <!-- Errors list -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Errors</div>
+        <div class="cardmeta"><span class="tag tag-bad">Fix these first</span></div>
+      </div>
+
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="col-num">TYPE</th>
+              <th>DETAIL</th>
+              <th class="col-num">ROW</th>
+              <th class="col-num">FILE</th>
+            </tr>
+          </thead>
+          <tbody id="errorsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Warnings list -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Warnings</div>
+        <div class="cardmeta"><span class="tag tag-warn">Worth reviewing</span></div>
+      </div>
+
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="col-num">TYPE</th>
+              <th>DETAIL</th>
+              <th class="col-num">ROW</th>
+              <th class="col-num">FILE</th>
+            </tr>
+          </thead>
+          <tbody id="warningsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quick stats -->
+    <section class="card">
+      <div class="cardhead">
+        <div class="cardtitle">Quick checks</div>
+        <div class="cardmeta"><span class="tag">sanity</span></div>
+      </div>
+
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th class="col-num">Result</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="quickBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/validate.js"></script>
+</body>
+</html>
