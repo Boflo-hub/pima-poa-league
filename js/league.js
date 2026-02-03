@@ -35,24 +35,39 @@ function parseCSV(text) {
 }
 
 function idxMap(header) {
-  const i = (name) => header.indexOf(name);
-  const required = ["Season","Pos","Player","P","W","L","BF","BA","BD","7B","BP","PTS"];
-  for (const col of required) {
-    if (i(col) === -1) throw new Error(`Missing column in league.csv: ${col}`);
-  }
+  const norm = (s) =>
+    String(s || "")
+      .replace(/^\uFEFF/, "")          // BOM safety
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/\s*-\s*/g, "-");       // "7- Ballers" -> "7-ballers"
+
+  const H = header.map(norm);
+
+  const pick = (...names) => {
+    for (const name of names) {
+      const k = norm(name);
+      const idx = H.indexOf(k);
+      if (idx !== -1) return idx;
+    }
+    throw new Error(`Missing column in league.csv: ${names[0]}`);
+  };
+
+  // Map both "short" and "pretty" headers
   return {
-    season: i("Season"),
-    pos: i("Pos"),
-    player: i("Player"),
-    P: i("P"),
-    W: i("W"),
-    L: i("L"),
-    BF: i("BF"),
-    BA: i("BA"),
-    BD: i("BD"),
-    sevenB: i("7B"),
-    BP: i("BP"),
-    PTS: i("PTS")
+    season: pick("Season"),
+    pos:    pick("Pos", "Position"),
+    player: pick("Player"),
+    P:      pick("P", "Games Played"),
+    W:      pick("W", "Wins"),
+    L:      pick("L", "Losses"),
+    BF:     pick("BF", "Balls For"),
+    BA:     pick("BA", "Balls Against"),
+    BD:     pick("BD", "Ball Difference"),
+    sevenB: pick("7B", "7-Ballers", "7- Ballers", "7-ballers"),
+    BP:     pick("BP", "Bonus Points"),
+    PTS:    pick("PTS", "League Points (3 per win)", "League Points")
   };
 }
 
