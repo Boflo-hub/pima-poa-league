@@ -52,7 +52,7 @@ Season,Round,Player A,Player B,Played?,Winner
 1,3,Sydney,Collo,YES,Collo
 1,1,Sydney,Nesta,YES,Sydney
 1,2,Sydney,Nesta,YES,Nesta
-1,3,Sydney,Nesta,NO,
+1,3,Sydney,Nesta,YES,Sydney
 1,1,Sydney,Yusuf,YES,Sydney
 1,2,Sydney,Yusuf,YES,Sydney
 1,3,Sydney,Yusuf,YES,Sydney
@@ -60,12 +60,12 @@ Season,Round,Player A,Player B,Played?,Winner
 1,2,Sydney,Don,YES,Sydney
 1,3,Sydney,Don,YES,Sydney
 1,1,Sydney,Ken,YES,Sydney
-1,2,Sydney,Ken,NO,
+1,2,Sydney,Ken,YES,Sydney
 1,3,Sydney,Ken,NO,
 1,1,Mwas,Collo,YES,Collo
 1,2,Mwas,Collo,YES,Collo
 1,3,Mwas,Collo,YES,Collo
-1,1,Mwas,Nesta,NO,
+1,1,Mwas,Nesta,YES,Mwas
 1,2,Mwas,Nesta,NO,
 1,3,Mwas,Nesta,NO,
 1,1,Mwas,Yusuf,YES,Mwas
@@ -76,7 +76,7 @@ Season,Round,Player A,Player B,Played?,Winner
 1,3,Mwas,Don,YES,Don
 1,1,Mwas,Ken,YES,Ken
 1,2,Mwas,Ken,YES,Mwas
-1,3,Mwas,Ken,NO,
+1,3,Mwas,Ken,YES,Mwas
 1,1,Collo,Nesta,YES,Collo
 1,2,Collo,Nesta,NO,
 1,3,Collo,Nesta,NO,
@@ -85,7 +85,7 @@ Season,Round,Player A,Player B,Played?,Winner
 1,3,Collo,Yusuf,YES,Yusuf
 1,1,Collo,Don,YES,Don
 1,2,Collo,Don,YES,Don
-1,3,Collo,Don,NO,
+1,3,Collo,Don,YES,Don
 1,1,Collo,Ken,YES,Ken
 1,2,Collo,Ken,YES,Collo
 1,3,Collo,Ken,YES,Collo
@@ -106,12 +106,4 @@ Season,Round,Player A,Player B,Played?,Winner
 1,3,Yusuf,Ken,NO,
 1,1,Don,Ken,YES,Don
 1,2,Don,Ken,YES,Don
-1,3,Don,Ken,NO,
-3,,,,,
-4,,,,,
-5,,,,,
-6,,,,,
-7,,,,,
-8,,,,,
-9,,,,,
-10,,,,,
+1,3,Don,Ken,YES,Don
